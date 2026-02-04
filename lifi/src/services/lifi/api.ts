@@ -2,7 +2,7 @@
 import axios from "axios";
 import type { QuoteParams } from "../../types/index.js";
 import { ethers, Contract } from "ethers";
-import { ERC20_ABI } from "../../erc20.abi.js";
+import { ERC20_ABI } from "../../erc20.abi.ts";
 
 const API_URL = "https://li.quest/v1";
 const headers = { "x-lifi-api-key": process.env.LIFI_API_KEY };
@@ -42,13 +42,22 @@ export const checkAndSetAllowance = async (
   if (tokenAddress === ethers.ZeroAddress) {
     return; // Native token
   }
-
+  const NATIVE_TOKEN = "0x0000000000000000000000000000000000000000";
   const erc20 = new Contract(tokenAddress, ERC20_ABI, wallet);
+  if (tokenAddress.toLowerCase() === NATIVE_TOKEN.toLowerCase()) {
+    console.log("Native token - no approval needed");
+    return;
+  }
+  // const allowance = await erc20.allowance(
+  //   await wallet.getAddress(),
+  //   approvalAddress,
+  // );
+
+  //  const erc20 = new ethers.Contract(tokenAddress, ERC20_ABI, wallet);
   const allowance = await erc20.allowance(
     await wallet.getAddress(),
     approvalAddress,
   );
-
   if (allowance < BigInt(amount)) {
     // Approve max amount to avoid future approvals
     const tx = await erc20.approve(approvalAddress, ethers.MaxUint256);

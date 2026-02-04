@@ -8,8 +8,8 @@ import { ChainIds } from "./config/chains.ts";
 import { TOKENS } from "./config/tokens.ts";
 import { ethers } from "ethers";
 import * as dotenv from "dotenv";
-import { getGasSuggestion } from "./services/lifi/api.js";
-import { initializeLifi } from "./config/index.js";
+import { getGasSuggestion } from "./services/lifi/api.ts";
+import { initializeLifi } from "./config/index.ts";
 dotenv.config();
 
 initializeLifi();
@@ -25,7 +25,8 @@ const run = async () => {
   const toChain = ChainIds.OPTIMISM;
   const fromToken = TOKENS.USDC[fromChain];
   const toToken = TOKENS.USDC[toChain];
-  const fromAmount = "1000000"; // 1 USDC with 6 decimals
+  const fromAmount = "100000"; // 1 USDC with 6 decimals
+  const toAddress = "0xe4F4c768d628074C8a975126D517a60A03848f69";
 
   const gasSuggestion = await getGasSuggestion(fromChain);
   console.log("Recommended gas on Polygon:", gasSuggestion);
@@ -37,6 +38,7 @@ const run = async () => {
     toToken,
     fromAmount,
     fromAddress: await wallet.getAddress(),
+    toAddress,
     integrator: "TTC",
     slippage: 0.005, // 0.5% slippage
     order: "CHEAPEST", // or "FASTEST"

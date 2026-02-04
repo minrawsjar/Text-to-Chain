@@ -1,5 +1,5 @@
 import { createConfig } from "@lifi/sdk";
-import { RPC_URLS } from "./chains.js";
+import { RPC_URLS } from "./chains.ts";
 
 export const initializeLifi = () => {
   createConfig({
