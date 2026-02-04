@@ -83,6 +83,18 @@ impl UserWallet {
             format!("{}.{}", integer_part, decimal_part)
         }
     }
+
+    /// Get the deterministic Smart Account address for this signer
+    /// using SimpleAccountFactory
+    pub async fn get_smart_account_address(
+        &self,
+        factory_address: Address,
+        provider: std::sync::Arc<AmoyProvider>,
+    ) -> Result<Address, Box<dyn std::error::Error + Send + Sync>> {
+        // Salt = 0 for default account
+        let salt = U256::zero();
+        crate::wallet::aa::get_smart_account_address(factory_address, self.address, salt, provider).await
+    }
 }
 
 #[cfg(test)]

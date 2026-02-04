@@ -1,0 +1,13 @@
+# Add these dependencies to your existing Cargo.toml
+
+[dependencies]
+# Existing dependencies...
+
+# Ethereum integration
+ethers = { version = "2.0", features = ["abigen", "ws"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# For contract ABIs
+hex = "0.4"

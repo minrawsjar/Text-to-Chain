@@ -5,6 +5,7 @@ mod db;
 mod routes;
 mod sms;
 mod wallet;
+mod yellow_client;
 
 use config::Config;
 use commands::CommandProcessor;
@@ -73,7 +74,10 @@ async fn main() -> anyhow::Result<()> {
         tracing::info!("Admin routes enabled at /admin/*");
         create_router_with_admin(twilio, command_processor, voucher_repo, admin_token)
     } else {
-        let command_processor = CommandProcessor::new(None, provider);
+        let command_processor = CommandProcessor::new(
+            None, 
+            provider,
+        );
         create_router(twilio, command_processor)
     };
 

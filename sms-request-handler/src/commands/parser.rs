@@ -26,6 +26,8 @@ pub enum Command {
     History,
     /// Redeem a voucher code
     Redeem { code: String },
+    /// Swap tokens for ETH
+    Swap { amount: f64, token: String },
     /// Save a contact: SAVE <name> <phone>
     Save { name: String, phone: String },
     /// List contacts
@@ -117,6 +119,7 @@ impl CommandProcessor {
                     Command::Redeem { code: parts[1].to_string() }
                 }
             }
+            "SWAP" | "CONVERT" => self.parse_swap(&parts),
             "SAVE" | "ADD" => self.parse_save(&parts),
             "CONTACTS" | "BOOK" => Command::Contacts,
             "CHAIN" | "NETWORK" => {
@@ -128,6 +131,22 @@ impl CommandProcessor {
             }
             _ => Command::Unknown(text),
         }
+    }
+
+    /// Parse SWAP command: SWAP <amount> <token>
+    fn parse_swap(&self, parts: &[&str]) -> Command {
+        if parts.len() < 3 {
+            return Command::Unknown("Usage: SWAP <amount> <token>\nExample: SWAP 100 TXTC".to_string());
+        }
+
+        let amount = match parts[1].parse::<f64>() {
+            Ok(amt) => amt,
+            Err(_) => return Command::Unknown("Invalid amount".to_string()),
+        };
+
+        let token = parts[2].to_string();
+        
+        Command::Swap { amount, token }
     }
 
     /// Parse SAVE command: SAVE <name> <phone>
@@ -176,11 +195,12 @@ impl CommandProcessor {
             Command::Balance => self.balance_response(from).await,
             Command::Pin { new_pin } => self.pin_response(from, new_pin).await,
             Command::Send { amount, token, recipient } => {
-                self.send_response(from, amount, &token, &recipient)
+                self.send_response(from, amount, &token, &recipient).await
             }
             Command::Deposit => self.deposit_response(from).await,
             Command::History => self.history_response(from).await,
             Command::Redeem { code } => self.redeem_response(from, &code).await,
+            Command::Swap { amount, token } => self.swap_response(from, amount, &token).await,
             Command::Save { name, phone } => self.save_response(from, &name, &phone).await,
             Command::Contacts => self.contacts_response(from).await,
             Command::SwitchChain { chain } => self.chain_response(from, &chain).await,
@@ -192,13 +212,15 @@ impl CommandProcessor {
         "TextChain Commands:\n\
          JOIN - Create wallet\n\
          BALANCE - Check balance\n\
-         REDEEM <code> - Use voucher\n\
-         DEPOSIT - Get address\n\
-         SEND 10 USDC TO +91...\n\
-         SAVE <name> <phone>\n\
-         CONTACTS - List saved\n\
-         CHAIN <polygon|base>\n\
-         HELP - This message".to_string()
+         SEND <amt> <token> TO <phone> - Send tokens\n\
+         SWAP <amt> <token> - Swap tokens for ETH\n\
+         REDEEM <code> - Redeem voucher\n\
+         DEPOSIT - Get deposit address\n\
+         HISTORY - Recent transactions\n\
+         SAVE <name> <phone> - Save contact\n\
+         CONTACTS - List contacts\n\
+         CHAIN <name> - Switch network\n\
+         PIN <code> - Set PIN".to_string()
     }
 
     async fn join_response(&self, from: &str) -> String {
@@ -208,11 +230,15 @@ impl CommandProcessor {
         };
 
         // Check if user already exists
-        match repo.exists(from).await {
-            Ok(true) => {
-                return format!("Welcome back!\n\nReply BALANCE or DEPOSIT");
+        match repo.find_by_phone(from).await {
+            Ok(Some(user)) => {
+                return format!(
+                    "Welcome back!\n\nYour wallet:\n{}...{}\n\nReply BALANCE or DEPOSIT",
+                    &user.wallet_address[..6],
+                    &user.wallet_address[user.wallet_address.len() - 4..]
+                );
             }
-            Ok(false) => {}
+            Ok(None) => {}
             Err(e) => {
                 tracing::error!("DB error: {}", e);
                 return "Error. Try later.".to_string();
@@ -251,62 +277,54 @@ impl CommandProcessor {
             return "Balance: $0.00\nDB offline.".to_string();
         };
 
-        // Get user from database
+        // Get user's wallet address
         let user = match repo.find_by_phone(from).await {
             Ok(Some(u)) => u,
             Ok(None) => return "No wallet. Reply JOIN first.".to_string(),
             Err(_) => return "Error. Try later.".to_string(),
         };
 
-        // Restore wallet to get address
-        let key_bytes: [u8; 32] = match hex::decode(&user.encrypted_private_key) {
-            Ok(bytes) if bytes.len() == 32 => bytes.try_into().unwrap(),
-            _ => return "Error reading wallet.".to_string(),
-        };
-
-        let wallet = match UserWallet::from_private_key(&key_bytes) {
-            Ok(w) => w,
-            Err(_) => return "Error loading wallet.".to_string(),
-        };
-
-        // Check balances across all chains in parallel
-        let chains = self.multi_chain.available_chains();
-        let mut tasks = Vec::new();
-
-        for chain in chains {
-            if let Some(provider) = self.multi_chain.get(chain) {
-                let addr = wallet.address;
-                tasks.push(async move {
-                    crate::wallet::get_chain_balances(provider.clone(), chain, addr).await
-                });
-            }
-        }
-
-        // Execute all balance checks concurrently
-        let results = futures::future::join_all(tasks).await;
+        // Call Contract API to get balance on Sepolia
+        let client = reqwest::Client::new();
+        let api_url = format!("http://localhost:3000/api/balance/{}", user.wallet_address);
         
-        // Collect successful non-zero balances
-        let mut balance_strings = Vec::new();
-        for result in results {
-            match result {
-                Ok(bal) => {
-                    let has_native = !bal.native.balance.is_zero();
-                    let has_usdc = bal.usdc.as_ref().map_or(false, |u| !u.balance.is_zero());
-                    
-                    if has_native || has_usdc {
-                        balance_strings.push(bal.to_sms_string());
-                    }
-                }
-                Err(e) => {
-                    tracing::warn!("Balance check failed: {}", e);
-                }
+        tracing::info!("Fetching balance from Contract API for {}", user.wallet_address);
+        
+        let response = match client.get(&api_url).send().await {
+            Ok(resp) => resp,
+            Err(e) => {
+                tracing::error!("Failed to call Contract API: {}", e);
+                return "Network error. Try later.".to_string();
             }
-        }
+        };
 
-        if balance_strings.is_empty() {
-             "Balance: $0.00\n\nReply DEPOSIT to fund wallet.".to_string()
+        // Parse response
+        let result: serde_json::Value = match response.json().await {
+            Ok(json) => json,
+            Err(e) => {
+                tracing::error!("Failed to parse API response: {}", e);
+                return "Error processing response.".to_string();
+            }
+        };
+
+        if result["success"].as_bool().unwrap_or(false) {
+            let txtc_balance = result["balances"]["txtc"].as_str().unwrap_or("0");
+            let eth_balance = result["balances"]["eth"].as_str().unwrap_or("0");
+            
+            // Parse as float for display
+            let txtc: f64 = txtc_balance.parse().unwrap_or(0.0);
+            let eth: f64 = eth_balance.parse().unwrap_or(0.0);
+            
+            if txtc > 0.0 || eth > 0.0 {
+                format!(
+                    "Balance:\n{} TXTC\n{} ETH\n\nSepolia testnet",
+                    txtc, eth
+                )
+            } else {
+                "Balance: $0.00\n\nReply DEPOSIT to fund wallet.".to_string()
+            }
         } else {
-             format!("Balances:\n{}\n\nReply DEPOSIT for address.", balance_strings.join("\n"))
+            "Error fetching balance.".to_string()
         }
     }
 
@@ -331,11 +349,168 @@ impl CommandProcessor {
         }
     }
 
-    fn send_response(&self, _from: &str, amount: f64, token: &str, recipient: &str) -> String {
-        format!(
-            "Send {} {} to {}?\n\nReply CONFIRM or CANCEL",
-            amount, token, recipient
-        )
+    async fn send_response(&self, from: &str, amount: f64, token: &str, recipient: &str) -> String {
+        // Only support TXTC for now
+        if token.to_uppercase() != "TXTC" {
+            return format!("Only TXTC transfers supported.\nYou have: {} TXTC", token);
+        }
+
+        // Get sender's wallet and private key
+        let Some(ref user_repo) = self.user_repo else {
+            return "DB offline. Try later.".to_string();
+        };
+
+        let sender = match user_repo.find_by_phone(from).await {
+            Ok(Some(u)) => u,
+            Ok(None) => return "No wallet. Reply JOIN first.".to_string(),
+            Err(_) => return "Error. Try later.".to_string(),
+        };
+
+        // Resolve recipient address (could be phone number or wallet address)
+        let recipient_address = if recipient.starts_with("0x") && recipient.len() == 42 {
+            // Already a wallet address
+            recipient.to_string()
+        } else if recipient.starts_with("+") {
+            // Phone number - look up in database
+            match user_repo.find_by_phone(recipient).await {
+                Ok(Some(u)) => u.wallet_address,
+                Ok(None) => return format!("{} hasn't joined yet.\nAsk them to text JOIN", recipient),
+                Err(_) => return "Error looking up recipient.".to_string(),
+            }
+        } else {
+            return "Invalid recipient.\nUse phone (+1...) or address (0x...)".to_string();
+        };
+
+        // Get user's private key (stored as hex without 0x prefix)
+        let private_key = format!("0x{}", sender.encrypted_private_key);
+
+        // Call Contract API to send tokens
+        let client = reqwest::Client::new();
+        let api_url = "http://localhost:3000/api/send";
+        
+        tracing::info!("Sending {} TXTC from {} to {}", amount, sender.wallet_address, recipient_address);
+        
+        let response = match client
+            .post(api_url)
+            .json(&serde_json::json!({
+                "userPrivateKey": private_key,
+                "toAddress": recipient_address,
+                "amount": amount.to_string()
+            }))
+            .send()
+            .await
+        {
+            Ok(resp) => resp,
+            Err(e) => {
+                tracing::error!("Failed to call Contract API: {}", e);
+                return "Network error. Try later.".to_string();
+            }
+        };
+
+        // Parse response
+        let result: serde_json::Value = match response.json().await {
+            Ok(json) => json,
+            Err(e) => {
+                tracing::error!("Failed to parse API response: {}", e);
+                return "Error processing response.".to_string();
+            }
+        };
+
+        if result["success"].as_bool().unwrap_or(false) {
+            let tx_hash = result["txHash"].as_str().unwrap_or("");
+            
+            tracing::info!("Transfer successful: tx {}", tx_hash);
+            
+            format!(
+                "Sent {} TXTC to {}!\n\nReply BALANCE to check.",
+                amount, recipient
+            )
+        } else {
+            let error_msg = result["error"].as_str().unwrap_or("Unknown error");
+            tracing::error!("Transfer failed: {}", error_msg);
+            
+            if error_msg.contains("insufficient") || error_msg.contains("balance") {
+                "Insufficient balance.".to_string()
+            } else {
+                "Transfer failed. Try later.".to_string()
+            }
+        }
+    }
+
+    async fn swap_response(&self, from: &str, amount: f64, token: &str) -> String {
+        // Only support TXTC for now
+        if token.to_uppercase() != "TXTC" {
+            return format!("Only TXTC swaps supported.\nYou have: {} TXTC", token);
+        }
+
+        // Get user's wallet and private key
+        let Some(ref user_repo) = self.user_repo else {
+            return "DB offline. Try later.".to_string();
+        };
+
+        let user = match user_repo.find_by_phone(from).await {
+            Ok(Some(u)) => u,
+            Ok(None) => return "No wallet. Reply JOIN first.".to_string(),
+            Err(_) => return "Error. Try later.".to_string(),
+        };
+
+        // Get user's private key (stored as hex without 0x prefix)
+        let private_key = format!("0x{}", user.encrypted_private_key);
+
+        // Call Contract API to swap tokens
+        let client = reqwest::Client::new();
+        let api_url = "http://localhost:3000/api/swap";
+        
+        tracing::info!("Swapping {} TXTC to ETH for {}", amount, user.wallet_address);
+        
+        let response = match client
+            .post(api_url)
+            .json(&serde_json::json!({
+                "userPrivateKey": private_key,
+                "tokenAmount": amount.to_string(),
+                "minEthOut": "0"
+            }))
+            .send()
+            .await
+        {
+            Ok(resp) => resp,
+            Err(e) => {
+                tracing::error!("Failed to call Contract API: {}", e);
+                return "Network error. Try later.".to_string();
+            }
+        };
+
+        // Parse response
+        let result: serde_json::Value = match response.json().await {
+            Ok(json) => json,
+            Err(e) => {
+                tracing::error!("Failed to parse API response: {}", e);
+                return "Error processing response.".to_string();
+            }
+        };
+
+        if result["success"].as_bool().unwrap_or(false) {
+            let eth_received = result["ethReceived"].as_str().unwrap_or("0");
+            let tx_hash = result["txHash"].as_str().unwrap_or("");
+            
+            tracing::info!("Swap successful: {} ETH received, tx {}", eth_received, tx_hash);
+            
+            format!(
+                "Swapped {} TXTC for {} ETH!\n\nReply BALANCE to check.",
+                amount, eth_received
+            )
+        } else {
+            let error_msg = result["error"].as_str().unwrap_or("Unknown error");
+            tracing::error!("Swap failed: {}", error_msg);
+            
+            if error_msg.contains("insufficient") || error_msg.contains("balance") {
+                "Insufficient balance.".to_string()
+            } else if error_msg.contains("slippage") {
+                "Price moved too much. Try again.".to_string()
+            } else {
+                "Swap failed. Try later.".to_string()
+            }
+        }
     }
 
     async fn deposit_response(&self, from: &str) -> String {
@@ -376,45 +551,64 @@ impl CommandProcessor {
             return "DB offline. Try later.".to_string();
         };
 
-        let user_exists = match user_repo.exists(from).await {
-            Ok(exists) => exists,
+        // Get user's wallet address
+        let user = match user_repo.find_by_phone(from).await {
+            Ok(Some(user)) => user,
+            Ok(None) => return "No wallet. Reply JOIN first.".to_string(),
             Err(_) => return "Error. Try later.".to_string(),
         };
 
-        if !user_exists {
-            return "No wallet. Reply JOIN first.".to_string();
-        }
-
-        // Check voucher repository
-        let Some(ref voucher_repo) = self.voucher_repo else {
-            return "Voucher system offline.".to_string();
-        };
-
-        let Some(ref deposit_repo) = self.deposit_repo else {
-            return "Deposit system offline.".to_string();
-        };
-
-        // Redeem the voucher
-        match voucher_repo.redeem(code, from).await {
-            Ok(voucher) => {
-                // Record the deposit
-                let usdc_amount = voucher.usdc_amount;
-                if let Err(e) = deposit_repo.create_from_voucher(from, usdc_amount, code).await {
-                    tracing::error!("Failed to record deposit: {}", e);
-                }
-
-                format!(
-                    "Voucher redeemed!\n\n${:.2} USDC credited.\n\nReply BALANCE to check.",
-                    voucher.usdc_as_f64()
-                )
-            }
+        // Call Contract API to redeem voucher on-chain
+        let client = reqwest::Client::new();
+        let api_url = "http://localhost:3000/api/redeem";
+        
+        tracing::info!("Calling Contract API to redeem voucher: {}", code);
+        
+        let response = match client
+            .post(api_url)
+            .json(&serde_json::json!({
+                "voucherCode": code,
+                "userAddress": user.wallet_address
+            }))
+            .send()
+            .await
+        {
+            Ok(resp) => resp,
             Err(e) => {
-                match e {
-                    crate::db::VoucherError::NotFound => "Invalid voucher code.".to_string(),
-                    crate::db::VoucherError::AlreadyRedeemed => "Voucher already used.".to_string(),
-                    crate::db::VoucherError::Expired => "Voucher has expired.".to_string(),
-                    crate::db::VoucherError::DatabaseError(_) => "Error. Try later.".to_string(),
-                }
+                tracing::error!("Failed to call Contract API: {}", e);
+                return "Network error. Try later.".to_string();
+            }
+        };
+
+        // Parse response
+        let result: serde_json::Value = match response.json().await {
+            Ok(json) => json,
+            Err(e) => {
+                tracing::error!("Failed to parse API response: {}", e);
+                return "Error processing response.".to_string();
+            }
+        };
+
+        if result["success"].as_bool().unwrap_or(false) {
+            let eth_amount = result["ethAmount"].as_str().unwrap_or("0");
+            let tx_hash = result["txHash"].as_str().unwrap_or("");
+            
+            tracing::info!("Voucher redeemed successfully: {} ETH, tx: {}", eth_amount, tx_hash);
+            
+            format!(
+                "Voucher redeemed!\n\n{} ETH credited.\n\nReply BALANCE to check.",
+                eth_amount
+            )
+        } else {
+            let error_msg = result["error"].as_str().unwrap_or("Unknown error");
+            tracing::error!("Redemption failed: {}", error_msg);
+            
+            if error_msg.contains("already redeemed") || error_msg.contains("AlreadyRedeemed") {
+                "Voucher already used.".to_string()
+            } else if error_msg.contains("not found") || error_msg.contains("invalid") {
+                "Invalid voucher code.".to_string()
+            } else {
+                "Redemption failed. Try later.".to_string()
             }
         }
     }

@@ -1,10 +1,11 @@
 use std::env;
 
-/// Application configuration loaded from environment variables
 #[derive(Debug, Clone)]
 pub struct Config {
     pub twilio: TwilioConfig,
     pub server: ServerConfig,
+    pub aa: AaConfig,
+    pub admin_private_key: String,
 }
 
 #[derive(Debug, Clone)]
@@ -20,10 +21,17 @@ pub struct ServerConfig {
     pub port: u16,
 }
 
+#[derive(Debug, Clone)]
+pub struct AaConfig {
+    pub bundler_url: String,
+    pub entry_point_address: String,
+    pub simple_account_factory_address: String,
+}
+
 impl Config {
     /// Load configuration from environment variables
     pub fn from_env() -> Result<Self, ConfigError> {
-        dotenvy::dotenv().ok(); // Load .env file if present
+        dotenvy::dotenv().ok();
 
         Ok(Config {
             twilio: TwilioConfig {
@@ -41,6 +49,12 @@ impl Config {
                     .parse()
                     .map_err(|_| ConfigError::Invalid("SERVER_PORT"))?,
             },
+            aa: AaConfig {
+                bundler_url: env::var("BUNDLER_URL").unwrap_or_else(|_| "".to_string()),
+                entry_point_address: env::var("ENTRY_POINT_ADDRESS").unwrap_or_else(|_| "".to_string()),
+                simple_account_factory_address: env::var("SIMPLE_ACCOUNT_FACTORY_ADDRESS").unwrap_or_else(|_| "".to_string()),
+            },
+            admin_private_key: env::var("ADMIN_PRIVATE_KEY").unwrap_or_else(|_| "".to_string()),
         })
     }
 
