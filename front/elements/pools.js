@@ -1,39 +1,71 @@
 /**
  * Pools panel and mock data for TTC-IP dApp
+ * Only India active; rest inactive with no volume. Order: India first.
  */
 export const mockPools = [
-  { country: "KE", provider: "Safaricom", tvl: "1.2M", yield: "12%", active: true },
-  { country: "NG", provider: "MTN", tvl: "0.8M", yield: "8%", active: true },
-  { country: "GH", provider: "Vodafone", tvl: "0.5M", yield: "—", active: true },
-  { country: "TZ", provider: "Airtel", tvl: "0.3M", yield: "5%", active: false },
+  { country: "IN", countryName: "India", provider: "Airtel", tvl: "1.2M", apyTtc: "25%", active: true, currency: "Rupee", currencyCode: "INR" },
+  { country: "NG", countryName: "Nigeria", provider: "MTN", tvl: "—", apyTtc: "—", active: false, currency: "Naira", currencyCode: "NGN" },
+  { country: "KE", countryName: "Kenya", provider: "Safaricom", tvl: "—", apyTtc: "—", active: false, currency: "Shilling", currencyCode: "KES" },
+  { country: "BR", countryName: "Brazil", provider: "Claro", tvl: "—", apyTtc: "—", active: false, currency: "Real", currencyCode: "BRL" },
+  { country: "SN", countryName: "Senegal", provider: "Orange", tvl: "—", apyTtc: "—", active: false, currency: "CFA Franc", currencyCode: "XOF" },
+  { country: "GH", countryName: "Ghana", provider: "MTN", tvl: "—", apyTtc: "—", active: false, currency: "Cedi", currencyCode: "GHS" },
+  { country: "TZ", countryName: "Tanzania", provider: "Vodacom", tvl: "—", apyTtc: "—", active: false, currency: "Shilling", currencyCode: "TZS" },
+  { country: "ZA", countryName: "South Africa", provider: "Vodacom", tvl: "—", apyTtc: "—", active: false, currency: "Rand", currencyCode: "ZAR" },
+  { country: "IN", countryName: "India", provider: "Jio", tvl: "—", apyTtc: "—", active: false, currency: "Rupee", currencyCode: "INR" },
 ];
 
+function poolDescription(p) {
+  return `Phone credit locked to ${p.provider} value unit - ${p.currency} (${p.currencyCode})`;
+}
+
 export function renderPoolsPanel(filters = {}) {
-  const { country = "", currency = "" } = filters;
+  const { country = "", currency = "", provider: providerFilter = "" } = filters;
   const filtered = mockPools.filter((p) => {
     if (country && !p.country.toLowerCase().includes(country.toLowerCase())) return false;
+    if (providerFilter && !p.provider.toLowerCase().includes(providerFilter.toLowerCase())) return false;
     return true;
   });
+  const providers = [...new Set(mockPools.map((p) => p.provider))].sort();
+  const countries = [...new Set(mockPools.map((p) => p.country))].sort();
   return `
-    <div class="dash-filters">
-      <select class="dash-filter__select" data-filter="country" aria-label="Filter by country">
-        <option value="">All countries</option>
-        ${[...new Set(mockPools.map((p) => p.country))].map((c) => `<option value="${c}" ${country === c ? "selected" : ""}>${c}</option>`).join("")}
-      </select>
-      <select class="dash-filter__select" data-filter="currency" aria-label="Filter by currency">
-        <option value="">All</option>
-        <option value="USDC" ${currency === "USDC" ? "selected" : ""}>USDC</option>
-      </select>
+    <div class="pools-panel__top">
+      <h1 class="pools-panel__title">Pools</h1>
+      <div class="dash-filters dash-filters--row">
+        <select class="dash-filter__select" data-filter="country" aria-label="Filter by country">
+          <option value="">All countries</option>
+          ${countries.map((c) => `<option value="${c}" ${country === c ? "selected" : ""}>${c}</option>`).join("")}
+        </select>
+        <select class="dash-filter__select" data-filter="provider" aria-label="Filter by provider">
+          <option value="">All providers</option>
+          ${providers.map((pr) => `<option value="${pr}" ${providerFilter === pr ? "selected" : ""}>${pr}</option>`).join("")}
+        </select>
+        <select class="dash-filter__select" data-filter="currency" aria-label="Filter by currency">
+          <option value="">All</option>
+          <option value="USDC" ${currency === "USDC" ? "selected" : ""}>USDC</option>
+        </select>
+      </div>
     </div>
-    <ul class="pools-list">
+    <div class="pools-grid">
       ${filtered.map((p) => `
-        <li class="pools-list__item">
-          <span class="pools-list__meta">${p.country} · ${p.provider}</span>
-          <span class="pools-list__tvl">${p.tvl}</span>
-          <span class="pools-list__yield">${p.yield}</span>
-          <span class="pools-list__status">${p.active ? "Live" : "Soon"}</span>
-        </li>
+        <article class="pool-card pool-card--${p.active ? "active" : "inactive"}${p.active ? " pool-card--clickable" : ""}" ${p.active ? `data-pool-id="${p.country}-${p.provider}"` : ""} role="${p.active ? "button" : ""}" tabindex="${p.active ? "0" : "-1"}">
+          <div class="pool-card__header">
+            <h3 class="pool-card__country">${p.countryName}</h3>
+            <span class="pool-card__status pool-card__status--${p.active ? "live" : "soon"}">${p.active ? "ACTIVE" : "COMING SOON"}</span>
+          </div>
+          <p class="pool-card__provider">${p.provider}</p>
+          <p class="pool-card__desc">${poolDescription(p)}</p>
+          <div class="pool-card__stats">
+            <div class="pool-card__stat">
+              <span class="pool-card__stat-label">TVL</span>
+              <span class="pool-card__stat-value">${p.tvl}</span>
+            </div>
+            <div class="pool-card__stat">
+              <span class="pool-card__stat-label">APY (TTC)</span>
+              <span class="pool-card__stat-value pool-card__stat-value--yield">${p.apyTtc || "—"}</span>
+            </div>
+          </div>
+        </article>
       `).join("")}
-    </ul>
+    </div>
   `;
 }

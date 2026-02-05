@@ -361,12 +361,12 @@ img {
 
 .spotlight {
   position: relative;
-  width: 80%;
-  max-width: 80%;
+  width: 92%;
+  max-width: 1100px;
   margin-left: auto;
   margin-right: auto;
   min-height: 100vh;
-  padding: 2rem 2rem 1.5rem;
+  padding: 2rem 1.5rem 1.5rem;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -379,16 +379,18 @@ img {
   flex-direction: column;
   gap: 6rem;
   width: 100%;
+  max-width: 100%;
   min-height: 100vh;
 }
 
-/* Stroke layer: behind content, full height of spotlight */
+/* Stroke layer: fixed width so effect doesn't change size on scroll */
 .spotlight .svg-path {
   position: absolute;
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 92%;
+  width: 560px;
+  max-width: 58%;
   height: 100%;
   min-height: 100%;
   z-index: 0;
@@ -400,6 +402,8 @@ img {
   height: 100%;
   min-height: 100%;
   display: block;
+  object-fit: contain;
+  object-position: center center;
 }
 
 .spotlight .row {
@@ -464,7 +468,7 @@ img {
   .spotlight {
     width: 100%;
     max-width: 100%;
-    padding: 2rem 1.5rem;
+    padding: 2rem 1rem;
   }
 
   .spotlight-content {
@@ -494,7 +498,7 @@ img {
   }
 
   .spotlight .svg-path {
-    top: 12svh;
-    width: 280%;
+    width: 320px;
+    max-width: 58%;
   }
 }

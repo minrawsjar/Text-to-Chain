@@ -1,7 +1,79 @@
-/* Dashboard / overview panel */
-.dash-panel { padding: 1rem; }
-.dash-section { margin-bottom: 1.5rem; }
-.dash-section__title { font-size: 1.125rem; margin-bottom: 0.25rem; }
-.dash-section__text { color: var(--muted, #666); font-size: 0.9375rem; }
-.dash-filters { display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
-.dash-filter__select { padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid var(--border, #ddd); }
+/* Dashboard / overview panel — matches dApp glass + stroke design */
+.dash-panel {
+  padding: 0;
+  max-width: 48rem;
+}
+
+.dash-section {
+  margin-bottom: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  border-left: 3px solid var(--stroke);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dash-section:hover {
+  border-left-color: var(--stroke);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.dash-section:last-child {
+  margin-bottom: 0;
+}
+
+.dash-section__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.375rem;
+  color: var(--base-300, #f0f0f4);
+  letter-spacing: -0.02em;
+}
+
+.dash-section__text {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--base-300, #f0f0f4);
+  opacity: 0.78;
+}
+
+[data-theme="light"] .dash-section__title {
+  color: var(--base-300);
+}
+
+[data-theme="light"] .dash-section__text {
+  color: var(--base-300);
+  opacity: 0.85;
+}
+
+.dash-filters {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dash-filter__select {
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  color: var(--base-300, #f0f0f4);
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 2.25rem;
+}
+
+.dash-filter__select:focus {
+  outline: none;
+  border-color: var(--stroke);
+  box-shadow: 0 0 0 2px rgba(34, 211, 197, 0.2);
+}
+
+[data-theme="light"] .dash-filter__select {
+  background: rgba(255, 255, 255, 0.8);
+  color: #1a1a1e;
+}

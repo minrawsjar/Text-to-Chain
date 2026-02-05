@@ -25,7 +25,8 @@ function updateNavAuth() {
 function getFilters() {
   const country = document.querySelector('[data-filter="country"]')?.value || "";
   const currency = document.querySelector('[data-filter="currency"]')?.value || "";
-  return { country, currency };
+  const provider = document.querySelector('[data-filter="provider"]')?.value || "";
+  return { country, currency, provider };
 }
 
 function renderWalletPanel() {
@@ -62,9 +63,9 @@ function renderSidebarStats() {
     return parse(b.tvl) - parse(a.tvl);
   });
   const top10Pools = topPoolsByTvl.slice(0, 10);
-  const mostYieldPool = mockPools.filter((p) => p.yield !== "—").sort((a, b) => parseFloat(b.yield) - parseFloat(a.yield))[0];
+  const mostYieldPool = mockPools.filter((p) => p.apyTtc && p.apyTtc !== "—").sort((a, b) => parseFloat(String(b.apyTtc)) - parseFloat(String(a.apyTtc)))[0];
   const newPool = topPoolsByTvl[topPoolsByTvl.length - 1];
-  const topYieldVal = mostYieldPool?.yield ?? "—";
+  const topYieldVal = mostYieldPool?.apyTtc ?? "—";
   if (!sidebarStats) return;
   sidebarStats.innerHTML = `
     <div class="dapp-sidebar__stat-section">
@@ -87,7 +88,7 @@ function renderSidebarStats() {
       <h3 class="dapp-sidebar__stat-title">Most yield</h3>
       <div class="dapp-sidebar__stat-item dapp-sidebar__stat-item--highlight">
         <span>${mostYieldPool ? `${mostYieldPool.country} · ${mostYieldPool.provider}` : "—"}</span>
-        <span class="dapp-sidebar__stat-num">${mostYieldPool?.yield ?? "—"}</span>
+        <span class="dapp-sidebar__stat-num">${mostYieldPool?.apyTtc ?? "—"}</span>
       </div>
     </div>
     <div class="dapp-sidebar__stat-section dapp-sidebar__stat-section--highlight">
@@ -100,14 +101,28 @@ function renderSidebarStats() {
   `;
 }
 
+function getPoolDetailFromHash() {
+  const hash = (window.location.hash || "#pools").replace("#", "");
+  if (!hash.startsWith("pools/")) return null;
+  const poolId = hash.slice(6);
+  return getPoolById(poolId);
+}
+
 function renderPanel(panel) {
   if (!dappContent) return;
   dappContent.classList.remove("dapp-content--visible");
   dappContent.offsetHeight;
   requestAnimationFrame(() => {
     if (panel === "pools") {
-      dappContent.innerHTML = renderPoolsPanel(getFilters());
-      bindFilterListeners();
+      const pool = getPoolDetailFromHash();
+      if (pool && pool.active) {
+        dappContent.innerHTML = renderPoolDetailView(pool);
+        bindPoolDetailBack();
+      } else {
+        dappContent.innerHTML = renderPoolsPanel(getFilters());
+        bindFilterListeners();
+        bindPoolCardClicks();
+      }
     } else if (panel === "wallet") {
       dappContent.innerHTML = renderWalletPanel();
     } else {
@@ -122,13 +137,156 @@ function bindFilterListeners() {
     select.addEventListener("change", () => {
       dappContent.innerHTML = renderPoolsPanel(getFilters());
       bindFilterListeners();
+      bindPoolCardClicks();
     });
   });
 }
 
-function setDate() {
-  const el = document.getElementById("dapp-date");
-  if (el) el.textContent = new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+function getPoolById(poolId) {
+  const [country, ...providerParts] = poolId.split("-");
+  const provider = providerParts.join("-");
+  return mockPools.find((p) => p.country === country && p.provider === provider);
+}
+
+function renderPoolDetailView(pool) {
+  if (!pool) return "";
+  const desc = `Phone credit locked to ${pool.provider} value unit - ${pool.currency} (${pool.currencyCode})`;
+  return `
+    <div class="pool-detail">
+      <header class="pool-detail__header">
+        <button type="button" class="pool-detail__back" id="pool-detail-back" aria-label="Back to pools">← Pools</button>
+        <div class="pool-detail__title-row">
+          <h1 class="pool-detail__title">${pool.countryName} · ${pool.provider}</h1>
+          <span class="pool-detail__badge">ACTIVE</span>
+        </div>
+        <p class="pool-detail__desc">${desc}</p>
+      </header>
+      <div class="pool-detail__stats">
+        <div class="pool-detail__stat">
+          <span class="pool-detail__stat-label">TVL</span>
+          <span class="pool-detail__stat-value">${pool.tvl}</span>
+        </div>
+        <div class="pool-detail__stat">
+          <span class="pool-detail__stat-label">Volume 24h</span>
+          <span class="pool-detail__stat-value">${pool.tvl}</span>
+        </div>
+        <div class="pool-detail__stat">
+          <span class="pool-detail__stat-label">APY (TTC)</span>
+          <span class="pool-detail__stat-value pool-detail__stat-value--accent">${pool.apyTtc || "—"}</span>
+        </div>
+        <div class="pool-detail__stat">
+          <span class="pool-detail__stat-label">Fee tier</span>
+          <span class="pool-detail__stat-value">0.3%</span>
+        </div>
+        <div class="pool-detail__stat">
+          <span class="pool-detail__stat-label">Liquidity providers</span>
+          <span class="pool-detail__stat-value">—</span>
+        </div>
+      </div>
+      <div class="pool-detail__grid">
+        <section class="pool-detail__card">
+          <h2 class="pool-detail__card-title">Deposit liquidity</h2>
+          <p class="pool-detail__card-desc">Add USDC to the pool and earn TTC yield.</p>
+          <div class="pool-detail__input-wrap">
+            <input type="text" class="pool-detail__input" placeholder="0.00" aria-label="Amount" />
+            <span class="pool-detail__token">USDC</span>
+          </div>
+          <button type="button" class="pool-detail__btn pool-detail__btn--primary">Deposit</button>
+        </section>
+        <section class="pool-detail__card">
+          <h2 class="pool-detail__card-title">Withdraw liquidity</h2>
+          <p class="pool-detail__card-desc">Remove your share from the pool.</p>
+          <div class="pool-detail__input-wrap">
+            <input type="text" class="pool-detail__input" placeholder="0.00" aria-label="Amount" />
+            <span class="pool-detail__token">LP</span>
+          </div>
+          <button type="button" class="pool-detail__btn pool-detail__btn--secondary">Withdraw</button>
+        </section>
+        <section class="pool-detail__card pool-detail__card--wide">
+          <h2 class="pool-detail__card-title">Your position</h2>
+          <div class="pool-detail__position-row">
+            <span class="pool-detail__position-label">Deposited</span>
+            <span class="pool-detail__position-value">0.00 USDC</span>
+          </div>
+          <div class="pool-detail__position-row">
+            <span class="pool-detail__position-label">Pool share</span>
+            <span class="pool-detail__position-value">0%</span>
+          </div>
+          <div class="pool-detail__position-row">
+            <span class="pool-detail__position-label">Fees earned (TTC)</span>
+            <span class="pool-detail__position-value">0.00</span>
+          </div>
+          <div class="pool-detail__position-row">
+            <span class="pool-detail__position-label">Unclaimed yield</span>
+            <span class="pool-detail__position-value pool-detail__stat-value--accent">0.00 TTC</span>
+          </div>
+        </section>
+        <section class="pool-detail__card">
+          <h2 class="pool-detail__card-title">Swap</h2>
+          <p class="pool-detail__card-desc">Convert between USDC and pool tokens.</p>
+          <div class="pool-detail__swap-row">
+            <div class="pool-detail__input-wrap">
+              <input type="text" class="pool-detail__input" placeholder="0.00" />
+              <span class="pool-detail__token">USDC</span>
+            </div>
+            <span class="pool-detail__swap-arrow">↓</span>
+            <div class="pool-detail__input-wrap">
+              <input type="text" class="pool-detail__input" placeholder="0.00" readonly />
+              <span class="pool-detail__token">LP</span>
+            </div>
+          </div>
+          <button type="button" class="pool-detail__btn pool-detail__btn--secondary">Swap</button>
+        </section>
+        <section class="pool-detail__card pool-detail__card--wide">
+          <h2 class="pool-detail__card-title">Pool info</h2>
+          <div class="pool-detail__position-row">
+            <span class="pool-detail__position-label">Settlement asset</span>
+            <span class="pool-detail__position-value">USDC</span>
+          </div>
+          <div class="pool-detail__position-row">
+            <span class="pool-detail__position-label">Value unit</span>
+            <span class="pool-detail__position-value">${pool.currency} (${pool.currencyCode})</span>
+          </div>
+          <div class="pool-detail__position-row">
+            <span class="pool-detail__position-label">Provider</span>
+            <span class="pool-detail__position-value">${pool.provider}</span>
+          </div>
+        </section>
+      </div>
+    </div>
+  `;
+}
+
+function bindPoolDetailBack() {
+  const back = document.getElementById("pool-detail-back");
+  if (back) back.addEventListener("click", () => {
+    window.location.hash = "pools";
+    setActive("pools");
+  });
+}
+
+function openPoolDetails(pool) {
+  const poolId = `${pool.country}-${pool.provider}`;
+  window.location.hash = `pools/${poolId}`;
+  setActive("pools");
+}
+
+function bindPoolCardClicks() {
+  document.querySelectorAll(".pool-card--clickable").forEach((card) => {
+    const poolId = card.getAttribute("data-pool-id");
+    if (!poolId) return;
+    const openDetails = () => {
+      const pool = getPoolById(poolId);
+      if (pool && pool.active) openPoolDetails(pool);
+    };
+    card.addEventListener("click", openDetails);
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openDetails();
+      }
+    });
+  });
 }
 
 function initSidebar() {
@@ -176,19 +334,19 @@ function initLoginModal() {
 }
 
 function setActive(panel) {
-  const current = panel || (window.location.hash.replace("#", "") || "pools");
+  const hash = (window.location.hash || "#pools").replace("#", "");
+  const current = panel != null ? panel : hash;
+  const panelForNav = current.startsWith("pools") ? "pools" : current;
+  const panelForRender = current.startsWith("pools") ? "pools" : (current || "pools");
   document.querySelectorAll(".nav-dapp-link").forEach((link) => {
-    link.classList.toggle("is-active", link.getAttribute("data-panel") === current);
+    link.classList.toggle("is-active", link.getAttribute("data-panel") === panelForNav);
   });
   const walletLink = document.getElementById("nav-wallet");
-  if (walletLink) walletLink.classList.toggle("is-active", current === "wallet");
-  const headerTitle = document.getElementById("dapp-header-title");
-  if (headerTitle) headerTitle.textContent = current === "wallet" ? "Dashboard" : "";
-  renderPanel(current);
+  if (walletLink) walletLink.classList.toggle("is-active", panelForNav === "wallet");
+  renderPanel(panelForRender);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  setDate();
   initSidebar();
   updateNavAuth();
   initLoginModal();
@@ -212,7 +370,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!window.location.hash) window.location.hash = "pools";
   setActive(initialPanel);
 
-  window.addEventListener("hashchange", () => setActive(window.location.hash.replace("#", "")));
+  window.addEventListener("hashchange", () => setActive(null));
 
   navLinks.forEach((link) => {
     link.addEventListener("click", (e) => {

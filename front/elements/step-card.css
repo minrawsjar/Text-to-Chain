@@ -1,4 +1,42 @@
-/* Step card component */
-.step-card { padding: 1rem; border-radius: 8px; border: 1px solid var(--border, #eee); }
-.step-card__title { font-weight: 600; margin-bottom: 0.25rem; }
-.step-card__desc { font-size: 0.875rem; color: var(--muted, #666); }
+/* Step card — bigger, glass style; uses --glass, --glass-border, --stroke, --base-300 */
+.step-card {
+  padding: 1.75rem 2rem;
+  border-radius: 1rem;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  max-width: 380px;
+  min-width: 280px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.step-card:hover {
+  border-color: rgba(34, 211, 197, 0.25);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.step-card__title {
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--base-300);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.step-card__desc {
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--base-300);
+  opacity: 0.85;
+}
+
+.step-card[data-step]::before {
+  content: attr(data-step);
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--stroke);
+  margin-bottom: 0.75rem;
+  opacity: 0.95;
+}
