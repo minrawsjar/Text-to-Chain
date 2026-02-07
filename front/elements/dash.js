@@ -1,11 +1,20 @@
 const TOKENIZED_ASSETS = [
-  { currency: "Naira", code: "NGN", country: "Nigeria", active: true },
+  { currency: "Naira", code: "NGN", country: "Nigeria", active: true, tvl: "1.2M" },
   { currency: "Rupee", code: "INR", country: "India", active: false },
   { currency: "Shilling", code: "KES", country: "Kenya", active: false },
   { currency: "Real", code: "BRL", country: "Brazil", active: false },
   { currency: "CFA Franc", code: "XOF", country: "Senegal", active: false },
   { currency: "Cedi", code: "GHS", country: "Ghana", active: false },
 ];
+
+function halfTvl(tvl) {
+  if (!tvl || tvl === "—") return null;
+  const match = tvl.match(/^([\d.]+)(M|K)?$/i);
+  if (!match) return null;
+  const num = parseFloat(match[1]) / 2;
+  const suffix = (match[2] || "").toUpperCase();
+  return num + (suffix ? suffix : "");
+}
 
 const YIELD_OPPORTUNITIES = [
   { pool: "Nigeria · MTN", currency: "NGN", apy: "25%", tvl: "1.2M", active: true },
@@ -25,12 +34,16 @@ export function renderTokenizedContent() {
       <h2 class="dash-cards-title">Tokenized assets</h2>
       <div class="dash-asset-cards">
         ${TOKENIZED_ASSETS.map(
-          (a) => `
+          (a) => {
+            const half = halfTvl(a.tvl);
+            return `
         <article class="dash-asset-card dash-asset-card--${a.active ? "active" : "inactive"}">
           <span class="dash-asset-card__status">${a.active ? "ACTIVE" : "COMING SOON"}</span>
           <h3 class="dash-asset-card__currency">${a.currency} (${a.code})</h3>
           <p class="dash-asset-card__country">${a.country}</p>
-        </article>`
+          ${half != null ? `<div class="dash-asset-card__tvl">${half}</div>` : ""}
+        </article>`;
+          }
         ).join("")}
       </div>
     </div>

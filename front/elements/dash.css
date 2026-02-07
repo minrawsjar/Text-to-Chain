@@ -166,22 +166,34 @@
 
 .dash-asset-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
 }
 
 .dash-asset-card {
   position: relative;
-  padding: 1.25rem;
+  aspect-ratio: 1;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   background: var(--glass);
   border: 1px solid var(--glass-border);
   border-radius: 1rem;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.dash-asset-card--active {
+  border-color: var(--stroke);
+  box-shadow: 0 0 0 1px var(--stroke);
+}
+
 .dash-asset-card:hover {
   border-color: rgba(34, 211, 197, 0.25);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+.dash-asset-card--active:hover {
+  box-shadow: 0 0 0 1px var(--stroke), 0 12px 32px rgba(34, 211, 197, 0.12);
 }
 
 .dash-asset-card__status {
@@ -219,22 +231,40 @@
   margin: 0;
 }
 
+.dash-asset-card__tvl {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--stroke);
+  margin-top: 0.5rem;
+}
+
 .dash-yield-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
 }
 
 .dash-yield-card {
-  padding: 1.25rem;
+  padding: 1.5rem;
   background: var(--glass);
   border: 1px solid var(--glass-border);
   border-radius: 1rem;
   position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .dash-yield-card--active {
-  border-left: 3px solid var(--stroke);
+  border-color: var(--stroke);
+  box-shadow: 0 0 0 1px var(--stroke);
+}
+
+.dash-yield-card--active:hover {
+  box-shadow: 0 0 0 1px var(--stroke), 0 12px 32px rgba(34, 211, 197, 0.12);
 }
 
 .dash-yield-card--inactive {

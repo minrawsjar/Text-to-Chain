@@ -210,7 +210,6 @@ img {
 }
 
 .hero,
-.spotlight,
 .outro {
   background-color: var(--base-100);
 }
@@ -218,8 +217,9 @@ img {
 .hero {
   position: relative;
   width: 100%;
-  height: 100svh;
+  height: 48svh;
   padding: 2rem 2rem;
+  padding-top: 20vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -325,6 +325,7 @@ img {
 .outro h1 {
   width: 60%;
   text-align: center;
+  font-size: clamp(3rem, 10vw, 7rem);
 }
 
 .outro .outro-tagline {
@@ -333,16 +334,16 @@ img {
 }
 
 .outro-cta {
-  margin-top: 2.5rem;
-  padding: 1.25rem 1.75rem;
+  margin-top: 3rem;
+  padding: 2rem 3rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--glass-border);
-  border-radius: 1rem;
+  border-radius: 1.25rem;
   text-align: center;
 }
 
 .outro-cta__text {
-  font-size: 1.125rem;
+  font-size: 1.5rem;
   font-weight: 500;
   opacity: 0.95;
   margin: 0;
@@ -359,91 +360,116 @@ img {
   color: var(--stroke);
 }
 
+/* Footer — no bg, one liner */
+.site-footer {
+  background: none;
+  padding: 1.5rem 2rem;
+  text-align: center;
+  border-top: none;
+}
+.site-footer__line {
+  font-size: 0.8125rem;
+  opacity: 0.65;
+  margin: 0;
+}
+
 .spotlight {
   position: relative;
-  width: 92%;
-  max-width: 1100px;
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
   min-height: 100vh;
-  padding: 2rem 1.5rem 1.5rem;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  gap: 10rem;
+  overflow: visible;
+  background-color: transparent;
 }
 
-.spotlight-content {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6rem;
+.spotlight-top-spacer {
+  min-height: 8vh;
   width: 100%;
-  max-width: 100%;
-  min-height: 100vh;
-}
-
-/* Stroke layer: fixed width so effect doesn't change size on scroll */
-.spotlight .svg-path {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 560px;
-  max-width: 58%;
-  height: 100%;
-  min-height: 100%;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.spotlight .svg-path svg {
-  width: 100%;
-  height: 100%;
-  min-height: 100%;
-  display: block;
-  object-fit: contain;
-  object-position: center center;
+  flex-shrink: 0;
 }
 
 .spotlight .row {
   position: relative;
-  z-index: 1;
+  z-index: 10;
   display: flex;
   justify-content: center;
   align-items: stretch;
-  gap: 0.75rem;
+  gap: 2rem;
+  min-height: 1px;
 }
 
-.spotlight .row--start {
+.spotlight .row:nth-child(odd) {
   justify-content: flex-start;
 }
 
-.spotlight .row--end {
+.spotlight .row:nth-child(even) {
   justify-content: flex-end;
 }
 
-/* Extra space between card rows (gap alone can collapse in some contexts) */
-.spotlight .row:not(.row-spacer) {
-  margin-top: 5rem;
-}
-
-.spotlight .row:not(.row-spacer):first-of-type {
-  margin-top: 0;
-}
-
 .spotlight .row .col {
-  flex: 0 1 auto;
+  flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-/* Spacer rows: height for stroke visibility (original style) */
-.spotlight .row-spacer .spacer {
-  min-height: 42vh;
+.spotlight .row:last-of-type .spotlight-img {
+  width: 50%;
+  max-width: 400px;
+}
+
+.spotlight .spotlight-img {
+  min-height: 20vh;
   width: 100%;
+  flex-shrink: 0;
+}
+
+.spotlight .card {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 2rem 2.5rem;
+  background-color: var(--base-200);
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  opacity: 0;
+}
+
+.spotlight .card h2 {
+  font-size: 2.5rem;
+  font-weight: 500;
+  letter-spacing: -0.075rem;
+  line-height: 1.1;
+  color: var(--base-300);
+}
+
+.spotlight .card p {
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.55;
+  color: var(--base-300);
+}
+
+.spotlight .svg-path {
+  position: absolute;
+  top: 25svh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.spotlight .svg-path svg {
+  width: 100%;
+  height: auto;
 }
 
 @media (max-width: 768px) {
@@ -465,40 +491,34 @@ img {
     width: 100%;
   }
 
+  .outro-cta {
+    padding: 1.5rem 2rem;
+  }
+
+  .outro-cta__text {
+    font-size: 1.25rem;
+  }
+
   .spotlight {
-    width: 100%;
-    max-width: 100%;
-    padding: 2rem 1rem;
-  }
-
-  .spotlight-content {
-    gap: 4rem;
-  }
-
-  .spotlight .row:not(.row-spacer) {
-    margin-top: 3rem;
+    gap: 5rem;
   }
 
   .spotlight .row {
     flex-direction: column;
-    justify-content: center;
   }
 
-  .spotlight .row .col {
+  .spotlight .row:last-of-type .spotlight-img {
     width: 100%;
+    max-width: none;
   }
 
-  .spotlight .row-spacer .spacer {
-    min-height: 38vh;
-  }
-
-  .spotlight .step-card {
+  .spotlight .card {
     width: 100%;
     max-width: none;
   }
 
   .spotlight .svg-path {
-    width: 320px;
-    max-width: 58%;
+    top: 15svh;
+    width: 275%;
   }
 }

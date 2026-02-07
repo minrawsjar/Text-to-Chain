@@ -1,25 +1,21 @@
-import { renderDashContent } from "./elements/dash.js";
+import { renderTokenizedContent, renderYieldContent } from "./elements/dash.js";
 import { renderPoolsPanel, mockPools } from "./elements/pools.js";
+import { connectWallet, getConnectedAddress, disconnectWallet, restoreWalletConnection, wagmiConfig } from "./elements/wallet-config.js";
+import { watchConnection } from "@wagmi/core";
 
 const dappContent = document.getElementById("dapp-content");
 const sidebarStats = document.getElementById("dapp-sidebar-stats");
 
-const LOGIN_KEY = "ttc-login";
-
 function isLoggedIn() {
-  return !!localStorage.getItem(LOGIN_KEY);
+  return !!getConnectedAddress();
 }
 
 function updateNavAuth() {
   const loginBtn = document.getElementById("nav-login");
   const walletLink = document.getElementById("nav-wallet");
-  if (isLoggedIn()) {
-    if (loginBtn) loginBtn.style.display = "none";
-    if (walletLink) walletLink.style.display = "inline-flex";
-  } else {
-    if (loginBtn) loginBtn.style.display = "inline-flex";
-    if (walletLink) walletLink.style.display = "none";
-  }
+  const connected = isLoggedIn();
+  if (loginBtn) loginBtn.style.display = connected ? "none" : "inline-flex";
+  if (walletLink) walletLink.style.display = connected ? "inline-flex" : "none";
 }
 
 function getFilters() {
@@ -30,20 +26,31 @@ function getFilters() {
 }
 
 function renderWalletPanel() {
-  const method = localStorage.getItem(LOGIN_KEY) || "wallet";
-  const isMobile = method === "mobile";
-  const id = isMobile ? "+1 ••• ••• 1234" : "0x7f3a9b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6a2c1";
+  const address = getConnectedAddress();
+  if (!address) {
+    return `
+    <div class="dapp-wallet-panel">
+      <h2 class="dapp-wallet-panel__title">Wallet</h2>
+      <div class="dapp-wallet-connect-cta">
+        <p class="dapp-wallet-connect-cta__text">Connect your wallet to view balance and use the dApp.</p>
+        <button type="button" class="login-modal__btn login-modal__btn--connect dapp-wallet-connect-cta__btn" id="wallet-panel-connect">Connect wallet</button>
+      </div>
+    </div>
+  `;
+  }
+  const short = `${address.slice(0, 6)}…${address.slice(-4)}`;
   return `
     <div class="dapp-wallet-panel">
       <h2 class="dapp-wallet-panel__title">Wallet</h2>
       <div class="dapp-wallet-user">
         <div class="dapp-wallet-user__row">
-          <div class="dapp-wallet-user__avatar">${isMobile ? "📱" : "◆"}</div>
+          <div class="dapp-wallet-user__avatar">◆</div>
           <div>
-            <div class="dapp-wallet-user__name">${isMobile ? "Mobile (OTC)" : "Wallet"}</div>
-            <div class="dapp-wallet-user__id">${id}</div>
+            <div class="dapp-wallet-user__name">Connected</div>
+            <div class="dapp-wallet-user__id" title="${address}">${short}</div>
           </div>
         </div>
+        <button type="button" class="dapp-wallet-user__disconnect" id="wallet-panel-disconnect">Disconnect</button>
       </div>
       <div class="dapp-wallet-actions__title">Quick actions</div>
       <div class="dapp-wallet-actions">
@@ -125,8 +132,13 @@ function renderPanel(panel) {
       }
     } else if (panel === "wallet") {
       dappContent.innerHTML = renderWalletPanel();
+      bindWalletPanelActions();
+    } else if (panel === "tokenized") {
+      dappContent.innerHTML = renderTokenizedContent();
+    } else if (panel === "yield") {
+      dappContent.innerHTML = renderYieldContent();
     } else {
-      dappContent.innerHTML = renderDashContent();
+      dappContent.innerHTML = renderTokenizedContent();
     }
     requestAnimationFrame(() => dappContent.classList.add("dapp-content--visible"));
   });
@@ -184,25 +196,29 @@ function renderPoolDetailView(pool) {
         </div>
       </div>
       <div class="pool-detail__grid">
-        <section class="pool-detail__card">
-          <h2 class="pool-detail__card-title">Deposit liquidity</h2>
-          <p class="pool-detail__card-desc">Add USDC to the pool and earn TTC yield.</p>
-          <div class="pool-detail__input-wrap">
-            <input type="text" class="pool-detail__input" placeholder="0.00" aria-label="Amount" />
-            <span class="pool-detail__token">USDC</span>
+        <section class="pool-detail__card pool-detail__card--deposit-withdraw">
+          <div class="pool-detail__toggle" role="tablist">
+            <button type="button" class="pool-detail__toggle-btn is-active" data-mode="deposit" aria-selected="true">Deposit</button>
+            <button type="button" class="pool-detail__toggle-btn" data-mode="withdraw" aria-selected="false">Withdraw</button>
           </div>
-          <button type="button" class="pool-detail__btn pool-detail__btn--primary">Deposit</button>
+          <div class="pool-detail__toggle-panel" id="pool-detail-deposit-panel">
+            <p class="pool-detail__card-desc">Add USDC to the pool and earn TTC yield.</p>
+            <div class="pool-detail__input-wrap">
+              <input type="text" class="pool-detail__input" placeholder="0.00" aria-label="Amount" />
+              <span class="pool-detail__token">USDC</span>
+            </div>
+            <button type="button" class="pool-detail__btn pool-detail__btn--primary">Deposit</button>
+          </div>
+          <div class="pool-detail__toggle-panel pool-detail__toggle-panel--hidden" id="pool-detail-withdraw-panel">
+            <p class="pool-detail__card-desc">Remove your share from the pool.</p>
+            <div class="pool-detail__input-wrap">
+              <input type="text" class="pool-detail__input" placeholder="0.00" aria-label="Amount" />
+              <span class="pool-detail__token">LP</span>
+            </div>
+            <button type="button" class="pool-detail__btn pool-detail__btn--secondary">Withdraw</button>
+          </div>
         </section>
         <section class="pool-detail__card">
-          <h2 class="pool-detail__card-title">Withdraw liquidity</h2>
-          <p class="pool-detail__card-desc">Remove your share from the pool.</p>
-          <div class="pool-detail__input-wrap">
-            <input type="text" class="pool-detail__input" placeholder="0.00" aria-label="Amount" />
-            <span class="pool-detail__token">LP</span>
-          </div>
-          <button type="button" class="pool-detail__btn pool-detail__btn--secondary">Withdraw</button>
-        </section>
-        <section class="pool-detail__card pool-detail__card--wide">
           <h2 class="pool-detail__card-title">Your position</h2>
           <div class="pool-detail__position-row">
             <span class="pool-detail__position-label">Deposited</span>
@@ -237,7 +253,7 @@ function renderPoolDetailView(pool) {
           </div>
           <button type="button" class="pool-detail__btn pool-detail__btn--secondary">Swap</button>
         </section>
-        <section class="pool-detail__card pool-detail__card--wide">
+        <section class="pool-detail__card">
           <h2 class="pool-detail__card-title">Pool info</h2>
           <div class="pool-detail__position-row">
             <span class="pool-detail__position-label">Settlement asset</span>
@@ -263,6 +279,28 @@ function bindPoolDetailBack() {
     window.location.hash = "pools";
     setActive("pools");
   });
+  const depositBtn = document.querySelector(".pool-detail__toggle-btn[data-mode='deposit']");
+  const withdrawBtn = document.querySelector(".pool-detail__toggle-btn[data-mode='withdraw']");
+  const depositPanel = document.getElementById("pool-detail-deposit-panel");
+  const withdrawPanel = document.getElementById("pool-detail-withdraw-panel");
+  if (depositBtn && withdrawBtn && depositPanel && withdrawPanel) {
+    depositBtn.addEventListener("click", () => {
+      depositBtn.classList.add("is-active");
+      depositBtn.setAttribute("aria-selected", "true");
+      withdrawBtn.classList.remove("is-active");
+      withdrawBtn.setAttribute("aria-selected", "false");
+      depositPanel.classList.remove("pool-detail__toggle-panel--hidden");
+      withdrawPanel.classList.add("pool-detail__toggle-panel--hidden");
+    });
+    withdrawBtn.addEventListener("click", () => {
+      withdrawBtn.classList.add("is-active");
+      withdrawBtn.setAttribute("aria-selected", "true");
+      depositBtn.classList.remove("is-active");
+      depositBtn.setAttribute("aria-selected", "false");
+      withdrawPanel.classList.remove("pool-detail__toggle-panel--hidden");
+      depositPanel.classList.add("pool-detail__toggle-panel--hidden");
+    });
+  }
 }
 
 function openPoolDetails(pool) {
@@ -297,40 +335,71 @@ function initSidebar() {
   closeBtn?.addEventListener("click", () => sidebar?.classList.remove("is-open"));
 }
 
+function openLoginModal() {
+  const modal = document.getElementById("login-modal");
+  const loginBtn = document.getElementById("nav-login");
+  if (modal) {
+    modal.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
+    loginBtn?.setAttribute("aria-expanded", "true");
+  }
+}
+
+function closeLoginModal() {
+  const modal = document.getElementById("login-modal");
+  const loginBtn = document.getElementById("nav-login");
+  if (modal) {
+    modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
+    loginBtn?.setAttribute("aria-expanded", "false");
+  }
+}
+
+async function handleConnectClick(btn) {
+  if (!btn) return;
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Connecting…";
+  try {
+    await connectWallet();
+    closeLoginModal();
+    updateNavAuth();
+    window.location.hash = "wallet";
+    setActive("wallet");
+  } catch (err) {
+    console.error("Wallet connect failed:", err);
+    btn.textContent = "Failed — try again";
+    setTimeout(() => {
+      btn.textContent = label;
+      btn.disabled = false;
+    }, 2000);
+    return;
+  }
+  btn.textContent = label;
+  btn.disabled = false;
+}
+
+function bindWalletPanelActions() {
+  const connectBtn = document.getElementById("wallet-panel-connect");
+  const disconnectBtn = document.getElementById("wallet-panel-disconnect");
+  connectBtn?.addEventListener("click", () => handleConnectClick(connectBtn));
+  disconnectBtn?.addEventListener("click", async () => {
+    await disconnectWallet();
+    updateNavAuth();
+    setActive("wallet");
+  });
+}
+
 function initLoginModal() {
   const modal = document.getElementById("login-modal");
   const loginBtn = document.getElementById("nav-login");
   const backdrop = document.getElementById("login-modal-backdrop");
   const closeBtn = document.getElementById("login-modal-close");
-  const openModal = () => {
-    if (modal) {
-      modal.hidden = false;
-      modal.setAttribute("aria-hidden", "false");
-      loginBtn?.setAttribute("aria-expanded", "true");
-    }
-  };
-  const closeModal = () => {
-    if (modal) {
-      modal.hidden = true;
-      modal.setAttribute("aria-hidden", "true");
-      loginBtn?.setAttribute("aria-expanded", "false");
-    }
-  };
-  loginBtn?.addEventListener("click", openModal);
-  backdrop?.addEventListener("click", closeModal);
-  closeBtn?.addEventListener("click", closeModal);
-  modal?.querySelectorAll(".login-modal__btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const method = btn.getAttribute("data-login");
-      if (method) {
-        localStorage.setItem(LOGIN_KEY, method);
-        closeModal();
-        updateNavAuth();
-        window.location.hash = "wallet";
-        setActive("wallet");
-      }
-    });
-  });
+  const connectBtn = document.getElementById("login-modal-connect");
+  loginBtn?.addEventListener("click", openLoginModal);
+  backdrop?.addEventListener("click", closeLoginModal);
+  closeBtn?.addEventListener("click", closeLoginModal);
+  connectBtn?.addEventListener("click", () => handleConnectClick(connectBtn));
 }
 
 function setActive(panel) {
@@ -346,11 +415,20 @@ function setActive(panel) {
   renderPanel(panelForRender);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await restoreWalletConnection();
   initSidebar();
   updateNavAuth();
   initLoginModal();
   renderSidebarStats();
+
+  watchConnection(wagmiConfig, {
+    onChange() {
+      updateNavAuth();
+      const hash = (window.location.hash || "#pools").replace("#", "");
+      if (hash === "wallet") setActive("wallet");
+    },
+  });
 
   const html = document.documentElement;
   const themeToggle = document.querySelector(".theme-toggle");
