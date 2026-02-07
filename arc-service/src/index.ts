@@ -174,7 +174,8 @@ app.post("/api/arc/quote", async (req, res) => {
 // ============================================================================
 app.post("/api/arc/cashout", async (req, res) => {
   try {
-    const { phone, userAddress, txtcAmount } = req.body;
+    const { phone, userAddress, txtcAmount, token } = req.body;
+    const tokenType = (token || "TXTC").toUpperCase();
 
     if (!phone || !userAddress || !txtcAmount) {
       return res.status(400).json({
@@ -184,7 +185,7 @@ app.post("/api/arc/cashout", async (req, res) => {
     }
 
     console.log(
-      `\n💰 Cashout request: ${txtcAmount} TXTC from ${phone}`
+      `\n💰 Cashout request: ${txtcAmount} ${tokenType} from ${phone}`
     );
 
     // Step 1: Ensure user has an Arc wallet
@@ -211,16 +212,29 @@ app.post("/api/arc/cashout", async (req, res) => {
     // Step 3: Process cashout asynchronously
     (async () => {
       try {
-        const result = await cashoutService.cashout(
-          txtcAmount,
-          userAddress,
-          walletInfo!.walletId,
-          walletInfo!.address
-        );
+        let result;
+        if (tokenType === "ETH") {
+          result = await cashoutService.cashoutEth(
+            txtcAmount,
+            userAddress,
+            walletInfo!.walletId,
+            walletInfo!.address
+          );
+        } else {
+          result = await cashoutService.cashout(
+            txtcAmount,
+            userAddress,
+            walletInfo!.walletId,
+            walletInfo!.address
+          );
+        }
 
         if (result.success) {
+          const label = tokenType === "ETH"
+            ? `${result.txtcAmount} ETH`
+            : `${result.txtcAmount} TXTC`;
           console.log(
-            `\n✅ Cashout complete for ${phone}: ${result.txtcAmount} TXTC → ~$${result.usdcEstimate} USDC`
+            `\n✅ Cashout complete for ${phone}: ${label} → ~$${result.usdcEstimate} USDC`
           );
 
           // Notify backend to send SMS
@@ -232,7 +246,7 @@ app.post("/api/arc/cashout", async (req, res) => {
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 phone,
-                message: `✅ Cashout complete!\n\n${result.txtcAmount} TXTC → ~$${result.usdcEstimate} USDC\n\nArc Wallet: ${result.arcWalletAddress.slice(0, 10)}...\n\nReply BALANCE to check.`,
+                message: `✅ Cashout complete!\n\n${label} → ~$${result.usdcEstimate} USDC\n\nArc Wallet: ${result.arcWalletAddress.slice(0, 10)}...\n\nReply BALANCE to check.`,
               }),
             });
           } catch (notifyError: any) {

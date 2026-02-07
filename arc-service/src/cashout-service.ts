@@ -438,6 +438,66 @@ export class CashoutService {
   }
 
   // ============================================================================
+  // ETH Cashout: Wrap ETH → WETH → USDC (Sepolia) → Bridge CCTP → Arc
+  // ============================================================================
+  async cashoutEth(
+    ethAmount: string,
+    userAddress: string,
+    arcWalletId: string,
+    arcWalletAddress: string
+  ): Promise<CashoutResult> {
+    console.log("\n" + "=".repeat(60));
+    console.log(`💰 CASHOUT ETH: ${ethAmount} ETH → USDC on Arc`);
+    console.log(`   User: ${userAddress}`);
+    console.log(`   Arc Wallet: ${arcWalletAddress}`);
+    console.log("=".repeat(60));
+
+    try {
+      // Step 1: Wrap ETH → WETH
+      console.log(`\n🔄 Wrapping ${ethAmount} ETH → WETH...`);
+      const wethContract = new ethers.Contract(WETH_ADDRESS, WETH_ABI, this.signer);
+      const amountWei = ethers.parseEther(ethAmount);
+      const wrapTx = await wethContract.deposit({ value: amountWei });
+      await wrapTx.wait();
+      console.log(`   ✅ Wrapped ${ethAmount} ETH → WETH`);
+
+      // Step 2: Swap WETH → USDC on Sepolia
+      const usdcSwapResult = await this.swapWethToUsdc(ethAmount);
+
+      // Step 3: Bridge USDC Sepolia → Arc via CCTP
+      const bridgeResult = await this.bridgeToArc(
+        usdcSwapResult.usdcReceived,
+        arcWalletAddress
+      );
+
+      console.log("\n✅ ETH CASHOUT COMPLETE!");
+      console.log(`   ${ethAmount} ETH → ${usdcSwapResult.usdcReceived} USDC → Arc`);
+
+      return {
+        success: true,
+        txtcAmount: ethAmount,
+        wethReceived: ethAmount,
+        usdcEstimate: bridgeResult.estimatedUsdc,
+        swapTxHash: wrapTx.hash,
+        bridgeStatus: bridgeResult.status,
+        arcWalletAddress,
+      };
+    } catch (error: any) {
+      console.error("❌ ETH Cashout failed:", error.message);
+      return {
+        success: false,
+        txtcAmount: ethAmount,
+        wethReceived: "0",
+        usdcEstimate: "0",
+        swapTxHash: "",
+        bridgeStatus: "FAILED",
+        arcWalletAddress,
+        error: error.message,
+      };
+    }
+  }
+
+  // ============================================================================
   // Full Cashout Flow: TXTC → WETH → USDC (Sepolia) → Bridge CCTP → Arc
   // ============================================================================
   async cashout(

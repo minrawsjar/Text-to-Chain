@@ -28,6 +28,8 @@ pub enum Command {
     Redeem { code: String },
     /// Swap tokens for ETH: SWAP <amount> TXTC
     Swap { amount: f64, token: String },
+    /// Cashout to USDC on Arc: CASHOUT <amount> TXTC or CASHOUT <amount> ETH
+    Cashout { amount: f64, token: String },
     /// Buy TXTC with airtime: BUY <amount>
     Buy { amount: f64 },
     /// Bridge tokens cross-chain: BRIDGE <amount> <token> FROM <chain> TO <chain>
@@ -139,6 +141,7 @@ impl CommandProcessor {
                 }
             }
             "SWAP" | "EXCHANGE" => self.parse_swap(&parts),
+            "CASHOUT" | "CASH" => self.parse_cashout(&parts),
             "BUY" | "TOPUP" | "PURCHASE" => self.parse_buy(&parts),
             "BRIDGE" | "CROSS" => self.parse_bridge(&parts),
             "SAVE" | "ADD" => self.parse_save(&parts),
@@ -267,6 +270,25 @@ impl CommandProcessor {
         }
     }
 
+    /// Parse CASHOUT command: CASHOUT <amount> TXTC or CASHOUT <amount> ETH
+    fn parse_cashout(&self, parts: &[&str]) -> Command {
+        if parts.len() < 3 {
+            return Command::Unknown("Usage: CASHOUT <amount> TXTC\nOr: CASHOUT <amount> ETH".to_string());
+        }
+
+        let amount = match parts[1].parse::<f64>() {
+            Ok(amt) => amt,
+            Err(_) => return Command::Unknown("Invalid amount".to_string()),
+        };
+
+        let token = parts[2].to_string();
+
+        Command::Cashout {
+            amount,
+            token,
+        }
+    }
+
     /// Execute a parsed command and return the response text
     async fn execute(&self, from: &str, command: Command) -> String {
         match command {
@@ -282,6 +304,7 @@ impl CommandProcessor {
             Command::Redeem { code } => self.redeem_response(from, &code).await,
             Command::Buy { amount } => self.buy_response(from, amount).await,
             Command::Swap { amount, token } => self.swap_response(from, amount, &token).await,
+            Command::Cashout { amount, token } => self.cashout_response(from, amount, &token).await,
             Command::Bridge { amount, token, from_chain, to_chain } => {
                 self.bridge_response(from, amount, &token, &from_chain, &to_chain).await
             }
@@ -293,7 +316,7 @@ impl CommandProcessor {
     }
 
     fn help_response(&self) -> String {
-        "Text-to-Chain Commands:\nJOIN <name> - Create wallet\nBALANCE - Check balance\nSEND 10 TXTC TO name.ttcip.eth\nBUY 10 - Buy TXTC with airtime\nDEPOSIT - Get deposit address\nREDEEM <code> - Redeem voucher\nSWAP 10 TXTC - Swap to ETH\nCASHOUT <AMOUNT> TXTC - Cash out to USDC\nMENU - Show this help".to_string()
+        "Text-to-Chain Commands:\nJOIN <name> - Create wallet\nBALANCE - Check balance\nSEND 10 TXTC TO name.ttcip.eth\nBUY 10 - Buy TXTC with airtime\nDEPOSIT - Get deposit address\nREDEEM <code> - Redeem voucher\nSWAP 10 TXTC - Swap to ETH\nCASHOUT 10 TXTC - Cash out to USDC\nCASHOUT 0.001 ETH - Cash out ETH\nMENU - Show this help".to_string()
     }
 
     async fn join_response(&self, from: &str, ens_name: Option<String>) -> String {
@@ -406,10 +429,38 @@ impl CommandProcessor {
                 // Save to database
                 match repo.create(from, &wallet.address_string(), &encrypted_key).await {
                     Ok(_) => {
-                        format!(
-                            "Wallet created!\n{}\n\nNow pick a name:\nJOIN <name>\n\nEx: JOIN alice",
-                            wallet.address_string()
-                        )
+                        // Create Arc wallet for USDC cashout
+                        let arc_url = std::env::var("ARC_SERVICE_URL").unwrap_or_else(|_| "http://arc:8084".to_string());
+                        let client = reqwest::Client::new();
+                        let arc_wallet = match client
+                            .post(&format!("{}/api/arc/wallet", arc_url))
+                            .json(&serde_json::json!({ "phone": from }))
+                            .timeout(std::time::Duration::from_secs(10))
+                            .send()
+                            .await
+                        {
+                            Ok(resp) => {
+                                if let Ok(data) = resp.json::<serde_json::Value>().await {
+                                    data["wallet"]["address"].as_str().unwrap_or("").to_string()
+                                } else {
+                                    String::new()
+                                }
+                            }
+                            Err(_) => String::new(),
+                        };
+
+                        if arc_wallet.is_empty() {
+                            format!(
+                                "Wallet created!\n{}\n\nNow pick a name:\nJOIN <name>\n\nEx: JOIN alice",
+                                wallet.address_string()
+                            )
+                        } else {
+                            format!(
+                                "Wallet created!\n{}\nArc (USDC): {}...\n\nNow pick a name:\nJOIN <name>\n\nEx: JOIN alice",
+                                wallet.address_string(),
+                                &arc_wallet[..10.min(arc_wallet.len())]
+                            )
+                        }
                     }
                     Err(e) => {
                         tracing::error!("DB save error: {}", e);
@@ -805,6 +856,42 @@ impl CommandProcessor {
         format!(
             "Swapping {} {}...\n\nYou'll get an SMS when complete.\n\nThis may take 30 seconds.",
             amount, token
+        )
+    }
+
+    async fn cashout_response(&self, from: &str, amount: f64, token: &str) -> String {
+        let Some(ref user_repo) = self.user_repo else {
+            return "DB offline. Try later.".to_string();
+        };
+
+        let user = match user_repo.find_by_phone(from).await {
+            Ok(Some(user)) => user,
+            Ok(None) => return "No wallet. Reply JOIN first.".to_string(),
+            Err(_) => return "Error. Try later.".to_string(),
+        };
+
+        let arc_url = std::env::var("ARC_SERVICE_URL").unwrap_or_else(|_| "http://arc:8084".to_string());
+        let client = reqwest::Client::new();
+        let token_upper = token.to_uppercase();
+
+        tracing::info!("Cashout: {} {} for {} ({})", amount, token_upper, from, user.wallet_address);
+
+        // Call arc-service cashout endpoint
+        let _response = client
+            .post(&format!("{}/api/arc/cashout", arc_url))
+            .json(&serde_json::json!({
+                "phone": from,
+                "userAddress": user.wallet_address,
+                "txtcAmount": amount.to_string(),
+                "token": token_upper
+            }))
+            .timeout(std::time::Duration::from_secs(5))
+            .send()
+            .await;
+
+        format!(
+            "Cashing out {} {}...\n\nTXTC → USDC on Arc via Circle CCTP.\nYou'll get an SMS when complete.\n\nThis may take 1-2 minutes.",
+            amount, token_upper
         )
     }
 
