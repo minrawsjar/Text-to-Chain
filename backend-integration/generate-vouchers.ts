@@ -12,11 +12,11 @@ import crypto from "crypto";
 
 dotenv.config();
 
-const VOUCHER_MANAGER = "0x74B02854a16cf33416541625C100beC97cC94F01";
-const TXTC_ADDRESS = "0x0F0E4A3F59C3B8794A9044a0dC0155fB3C3fA223";
+const VOUCHER_MANAGER = "0x3094e5820F911f9119D201B9E2DdD4b9cf792990";
+const TXTC_ADDRESS = "0x4d054FB258A260982F0bFab9560340d33D9E698B";
 
 const VOUCHER_ABI = [
-  "function createVoucher(bytes32 codeHash, uint256 amount) external",
+  "function generateVoucher(bytes32 codeHash, uint256 tokenAmount) external",
   "function redeemVoucher(bytes32 code, address recipient) external",
   "function owner() view returns (address)",
 ];
@@ -74,7 +74,7 @@ async function main() {
     const codeHash = ethers.keccak256(codeBytes32);
 
     try {
-      const tx = await voucher.createVoucher(codeHash, amountWei);
+      const tx = await voucher.generateVoucher(codeHash, amountWei);
       await tx.wait();
       codes.push(code);
       console.log(`   ${i + 1}. ${code} — ${amountTxtc} TXTC ✅`);
