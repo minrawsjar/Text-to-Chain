@@ -87,21 +87,23 @@ services:
       - ./arc-service/wallets.json:/app/wallets.json
     restart: unless-stopped
 
-  # Cloudflare Tunnel for SMS handler (Twilio webhook)
-  tunnel-sms:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate --url http://sms-handler:8080
+  # Caddy reverse proxy with auto-HTTPS via sslip.io
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
     depends_on:
       - sms-handler
-    restart: unless-stopped
-
-  # Cloudflare Tunnel for Airtime service (Africa's Talking webhook)
-  tunnel-airtime:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate --url http://airtime:8082
-    depends_on:
       - airtime
+      - backend
     restart: unless-stopped
 
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:
