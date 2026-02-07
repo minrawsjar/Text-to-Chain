@@ -1,86 +1,81 @@
-# 📱 Text-to-Chain
+# Text-to-Chain
 
-**Bringing DeFi to 2.5 billion feature phone users through SMS**
+**DeFi over SMS for 2.5 billion feature phone users**
 
-Text-to-Chain is a full-stack SMS-based DeFi platform that lets anyone interact with blockchain technology using only text messages. No smartphone, no app, no Wallet hassles — just send an SMS.
+Text-to-Chain is a full-stack SMS-based DeFi platform. Users interact with blockchain using only text messages: no smartphone, no app, no MetaMask.
 
-> Send `JOIN alice` to create a wallet. Send `SEND 10 TXTC TO bob.ttcip.eth` to transfer tokens. It's that simple.
-
----
-
-## 🎯 The Problem
-
-### 2.5 Billion People Are Locked Out of Web3
-
-#### 📵 No Smartphones
-- Billions rely on feature phones with no app stores, no browsers
-- Existing crypto wallets require smartphones and internet access
-
-#### 🏦 No Banking
-- 1.4 billion adults are unbanked globally
-- Traditional DeFi requires bank accounts for on/off ramps
-
-#### 🧩 Too Complex
-- Seed phrases, gas fees, chain switching — overwhelming for new users
-- No solution bridges SMS-native users to on-chain DeFi
-
-### 📊 The Reality
-- **2.5B** feature phone users worldwide
-- **$0** in DeFi accessible to them
-- **Zero** SMS-native DeFi platforms exist today
+> Send `JOIN alice` to create a wallet. Send `SEND 10 TXTC TO bob.ttcip.eth` to transfer tokens.
 
 ---
 
-## 🚀 The Text-to-Chain Solution
+## The Problem
 
-Text-to-Chain turns any phone with SMS into a full DeFi wallet. Users send simple text commands to a phone number and interact with smart contracts, DEXs, cross-chain bridges, and payment rails — all without ever touching a browser.
+For many people, joining the global economy is not about convenience. It is about access.
 
-### ✨ Key Features
+Most still have no banks, internet, app stores, or digital wallets. Sometimes infrastructure was never built; sometimes it was destroyed; sometimes it is simply out of reach. The reasons differ. The result is the same: people who should benefit from the digital revolution are cut off from participation.
 
-#### 📲 SMS-Native Interface
-- 13+ commands covering wallets, transfers, swaps, bridges, and more
-- Works on any phone that can send a text message
+The real challenge is not adoption. It is inclusion. How do we include unbanked people with no internet or smartphone?
 
-#### ⚡ Instant Transfers via Yellow Network
-- Off-chain batching reduces gas costs by up to 67%
-- State channel technology for near-instant settlement
+### Access barriers
 
-#### 🔄 On-Chain Swaps (Uniswap V3)
-- Swap TXTC for ETH directly from SMS
-- Custom liquidity pool with 0.3% fee tier
+- **No smartphones** — Billions rely on feature phones with no app stores or browsers. Existing crypto wallets require smartphones and internet.
+- **No banking** — 1.4 billion adults are unbanked globally. Traditional DeFi assumes bank accounts for on/off ramps.
+- **No bridge** — Seed phrases, gas fees, chain switching are overwhelming. No solution today connects SMS-native users to on-chain DeFi.
 
-#### 💸 Cross-Chain Cashout (Circle CCTP)
-- Convert TXTC → USDC and bridge to Arc Testnet in one SMS
-- Circle Developer-Controlled Wallets for each user
-- CCTP V2 Fast Transfer (~20 second attestation)
+### Scale
 
-#### 🌍 Cross-Chain Bridge (Li.Fi)
-- Bridge tokens across 7+ chains (Ethereum, Polygon, Base, Arbitrum, etc.)
-- Aggregates 20+ bridges for best execution
-
-#### 🏷️ ENS Identity
-- `JOIN alice` registers `alice.ttcip.eth` on-chain
-- Human-readable addresses for SMS transfers
-
-#### 📞 Airtime-to-Token
-- Buy TXTC with mobile airtime (MTN, Airtel)
-- USSD menu for feature phone users in Africa
+- **2.5B** feature phone users worldwide  
+- **$0** in DeFi accessible to them  
+- **Zero** SMS-native DeFi platforms exist today  
 
 ---
 
-## 🛠️ Technical Architecture
+## The Solution
+
+Instead of asking people to get better phones, internet, or government, we asked: what if Web3 worked over SMS?
+
+Text-to-Chain turns a basic phone into a blockchain wallet using plain text messages. No smartphone. No apps. No browser extensions. SMS to create a wallet. SMS to check balance. SMS to send money, swap tokens, or cash out. Under the hood it is real DeFi — wallets, smart contracts, on-chain settlement. For the user it is as simple as texting. Someone with a feature phone can own assets, move value, and participate in the global economy.
+
+We are not simplifying finance. We are making it accessible to anyone.
+
+### Capabilities
+
+**SMS-native interface**  
+13+ commands for wallets, transfers, swaps, bridges, and more. Works on any phone that can send a text.
+
+**Instant transfers (Yellow Network)**  
+Off-chain batching reduces gas costs by up to 67%. State channels for near-instant settlement. Small transfers become viable where each cent matters.
+
+**On-chain swaps (Uniswap V3)**  
+Swap TXTC for ETH from SMS. Custom liquidity pool, 0.3% fee tier.
+
+**Cross-chain cashout (Circle CCTP)**  
+Convert TXTC to USDC and bridge to Arc Testnet in one SMS. Circle Developer-Controlled Wallets per user. CCTP V2 Fast Transfer (~20s attestation).
+
+**Cross-chain bridge (Li.Fi)**  
+Bridge tokens across 7+ chains (Ethereum, Polygon, Base, Arbitrum, etc.). Aggregates 20+ bridges for best execution.
+
+**ENS identity**  
+`JOIN alice` registers `alice.ttcip.eth` on-chain. Human-readable addresses for SMS transfers.
+
+**Airtime-to-token**  
+Buy TXTC with mobile airtime (MTN, Airtel). USSD menu for feature phone users in Africa.
+
+---
+
+## Technical Architecture
 
 ### Core Technologies
 
-| | Technology | Purpose |
-|---|---|---|
-| 🦀 | **Rust + Axum** | High-performance SMS webhook handler |
-| 📜 | **Solidity + Foundry** | Smart contracts with 102 passing tests |
-| 🔷 | **ethers.js v6** | Blockchain interactions |
-| 🔵 | **Circle CCTP V2** | Cross-chain USDC bridging |
-| 🦄 | **Uniswap V3** | On-chain token swaps |
-| 🌉 | **Li.Fi SDK** | Multi-chain bridge aggregation |
-| 🐳 | **Docker Compose** | One-command deployment |
+| Technology | Purpose |
+|------------|---------|
+| **Rust + Axum** | High-performance SMS webhook handler |
+| **Solidity + Foundry** | Smart contracts with 102 passing tests |
+| **ethers.js v6** | Blockchain interactions |
+| **Circle CCTP V2** | Cross-chain USDC bridging |
+| **Uniswap V3** | On-chain token swaps |
+| **Li.Fi SDK** | Multi-chain bridge aggregation |
+| **Docker Compose** | One-command deployment |
 
 ### System Architecture
 
@@ -133,7 +128,7 @@ Text-to-Chain turns any phone with SMS into a full DeFi wallet. Users send simpl
 
 ---
 
-## 💬 SMS Commands
+## SMS Commands
 
 | Command | Description | Example |
 |---------|-------------|---------|
@@ -153,7 +148,7 @@ Text-to-Chain turns any phone with SMS into a full DeFi wallet. Users send simpl
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 Text-to-Chain/
@@ -203,7 +198,7 @@ Text-to-Chain/
 
 ---
 
-## 📜 Smart Contracts
+## Smart Contracts
 
 Deployed on **Ethereum Sepolia** with **102 Foundry tests** passing.
 
@@ -230,7 +225,7 @@ Deployed on **Ethereum Sepolia** with **102 Foundry tests** passing.
 
 ---
 
-## 🔄 Key Flows
+## Key Flows
 
 ### SEND Flow (Yellow Network Batching)
 
@@ -272,7 +267,7 @@ SMS: "SWAP 5 TXTC"
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -342,7 +337,7 @@ forge coverage          # Coverage report
 
 ---
 
-## 🏗️ Deployment
+## Deployment
 
 ### AWS EC2 (Production)
 
@@ -364,7 +359,7 @@ Set your Twilio webhook to: `https://<EC2-IP-WITH-DASHES>.sslip.io/sms/webhook`
 
 ---
 
-## 🔐 Security
+## Security
 
 - **No private key storage** — user wallets are on-chain only
 - **Environment variables** — all secrets in `.env` files (never committed)
@@ -375,7 +370,7 @@ Set your Twilio webhook to: `https://<EC2-IP-WITH-DASHES>.sslip.io/sms/webhook`
 
 ---
 
-## 🤝 Built With
+## Built With
 
 | Partner / Sponsor | Integration |
 |-------------------|-------------|
@@ -389,13 +384,10 @@ Set your Twilio webhook to: `https://<EC2-IP-WITH-DASHES>.sslip.io/sms/webhook`
 
 ---
 
-## 📄 License
+## License
 
 [MIT](LICENSE)
 
 ---
 
-<p align="center">
-  <b>Built for the next billion crypto users</b><br>
-  <i>No smartphone. No app. No Hassles. Just SMS.</i>
-</p>
+Built for the next billion: no smartphone, no app, no MetaMask. Just SMS.

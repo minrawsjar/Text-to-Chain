@@ -13,7 +13,7 @@ Text-to-Chain is an **SMS-based DeFi platform** that lets users create wallets, 
 - **SMS as the only client** — Twilio (or similar) receives SMS, forwards to our webhook; responses go back via SMS.
 - **Server-side command handling** — A Rust service parses commands, looks up users, and calls backend microservices.
 - **Phone → wallet binding** — One wallet per phone; the server maps phone numbers to wallet addresses and holds key material needed to sign on behalf of users.
-- **On-chain settlement** — User funds live in their own addresses on public chains (e.g. Sepolia, Arc); swaps, bridges, and cashouts execute via smart contracts and third-party protocols (Uniswap, CCTP, Li.Fi, Yellow).
+- **On-chain settlement** — User funds live in their own addresses on public chains (e.g. Sepolia, Arc); swaps, bridges, and cashouts execute via smart contracts and third-party protocols (Uniswap, Yellow).
 
 ---
 
@@ -66,7 +66,7 @@ Result: **one wallet per phone**, **one ENS subdomain per user** (optional), and
 
 ### 3.2 First Use After JOIN
 
-- **DEPOSIT** — User gets their wallet address (and ENS if set) to receive funds.
+- **DEPOSIT** — User gets their wallet address to receive funds.
 - **REDEEM &lt;code&gt;** — Voucher redemption mints TXTC (and optionally ETH) to their wallet; no prior shop registration.
 - **BALANCE** — Reads from chain (and/or backend) to show TXTC and native token balance.
 

@@ -2,7 +2,7 @@
 
 ## What Text-to-Chain Is About
 
-**Text-to-Chain** is an SMS-based DeFi platform that brings Web3 to everyone through simple text messages. No smartphone, no app, no MetaMask—just the device and channel that billions already use every day.
+**Text-to-Chain** is an SMS-based DeFi platform that brings Web3 to everyone through simple text messages. No smartphone, no app, no MetaMask. Just the device and channel that billions already use every day, and often just can.
 
 We exist because **onboarding has been unaffordable**: not in money alone, but in devices, connectivity, literacy in crypto UIs, and access to the formal financial rails that crypto assumes. For **2.5 billion feature-phone users**—and many more who are underbanked or excluded—the “right” to own assets, move value, and participate in global finance has been out of reach. We change that by meeting people where they are: **SMS**.
 
@@ -34,4 +34,4 @@ Change at scale often fails when we only improve what’s already there—faster
 
 ---
 
-*Bringing Web3 to everyone, one text at a time.*
+*Bringing Web3 to everyone, simple as that.*
