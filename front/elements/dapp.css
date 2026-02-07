@@ -3,7 +3,7 @@
 
 /* Page context */
 .dapp-page {
-  padding-top: 4rem;
+  padding-top: 6.5rem;
   min-height: 100vh;
 }
 
@@ -675,4 +675,42 @@
   text-align: center;
   font-size: 1.25rem;
   opacity: 0.6;
+}
+
+.pool-detail__card--deposit-withdraw .pool-detail__card-desc {
+  margin-top: 0;
+}
+
+.pool-detail__toggle {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.pool-detail__toggle-btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--base-300);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.pool-detail__toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pool-detail__toggle-btn.is-active {
+  background: var(--stroke);
+  color: var(--base-100, #0a0a0c);
+  border-color: var(--stroke);
+}
+
+.pool-detail__toggle-panel--hidden {
+  display: none;
 }
