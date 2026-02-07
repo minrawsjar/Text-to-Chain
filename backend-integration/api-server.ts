@@ -37,6 +37,24 @@ if (accountSid && authToken) {
   console.warn("⚠️  Twilio credentials not configured - SMS notifications disabled");
 }
 
+// Helper: look up user by wallet address via SMS handler admin API
+async function getUserByWallet(walletAddress: string): Promise<{ phone: string; ensName?: string } | null> {
+  try {
+    const smsHandlerUrl = process.env.SMS_HANDLER_URL || 'http://sms-handler:8080';
+    const response = await fetch(`${smsHandlerUrl}/admin/wallets`, {
+      headers: { 'Authorization': `Bearer ${process.env.ADMIN_TOKEN || 'admin123'}` },
+    });
+    const data = await response.json() as any;
+    const users = data.wallets || [];
+    const user = users.find((u: any) =>
+      u.wallet_address.toLowerCase() === walletAddress.toLowerCase()
+    );
+    return user ? { phone: user.phone, ensName: user.ens_name } : null;
+  } catch {
+    return null;
+  }
+}
+
 // Health check
 app.get("/health", (req, res) => {
   res.json({ status: "ok", network: "sepolia", chainId: 11155111 });
@@ -328,7 +346,7 @@ app.post("/api/yellow/settle", async (req, res) => {
 
     console.log(`   ✅ Settled: ${txHash}`);
 
-    // Send SMS notification
+    // Send SMS notification to sender
     if (twilioClient && twilioPhoneNumber && userPhone) {
       try {
         await twilioClient.messages.create({
@@ -338,6 +356,24 @@ app.post("/api/yellow/settle", async (req, res) => {
         });
       } catch (smsError: any) {
         console.error(`⚠️  SMS error: ${smsError.message}`);
+      }
+    }
+
+    // Send SMS notification to recipient
+    if (twilioClient && twilioPhoneNumber) {
+      try {
+        const recipientUser = await getUserByWallet(recipientAddress);
+        if (recipientUser && recipientUser.phone !== userPhone) {
+          const senderLabel = fromAddress ? fromAddress.slice(0, 10) + '...' : 'another user';
+          await twilioClient.messages.create({
+            body: `✅ Received ${amount} ${tokenType} from ${senderLabel}\n\nSettled via Yellow Network.\nReply BALANCE to check.`,
+            from: twilioPhoneNumber,
+            to: recipientUser.phone,
+          });
+          console.log(`   📱 Recipient notified: ${recipientUser.phone}`);
+        }
+      } catch (smsError: any) {
+        console.error(`⚠️  Recipient SMS error: ${smsError.message}`);
       }
     }
 
