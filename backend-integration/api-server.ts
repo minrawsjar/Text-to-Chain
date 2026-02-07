@@ -37,6 +37,31 @@ if (accountSid && authToken) {
   console.warn("⚠️  Twilio credentials not configured - SMS notifications disabled");
 }
 
+// Helper: get Reloadly OAuth2 token for airtime API
+let _reloadlyTokenCache: { token: string; expiry: number } | null = null;
+async function getReloadlyToken(): Promise<string> {
+  if (_reloadlyTokenCache && _reloadlyTokenCache.expiry > Date.now()) {
+    return _reloadlyTokenCache.token;
+  }
+  const clientId = process.env.RELOADLY_CLIENT_ID;
+  const clientSecret = process.env.RELOADLY_CLIENT_SECRET;
+  if (!clientId || !clientSecret) throw new Error('Reloadly credentials not configured');
+
+  const audience = process.env.RELOADLY_SANDBOX !== 'false'
+    ? 'https://topups-sandbox.reloadly.com'
+    : 'https://topups.reloadly.com';
+
+  const resp = await fetch('https://auth.reloadly.com/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, grant_type: 'client_credentials', audience }),
+  });
+  const data = await resp.json() as any;
+  if (!data.access_token) throw new Error('Reloadly auth failed');
+  _reloadlyTokenCache = { token: data.access_token, expiry: Date.now() + (data.expires_in - 60) * 1000 };
+  return data.access_token;
+}
+
 // Helper: look up user by wallet address via SMS handler admin API
 async function getUserByWallet(walletAddress: string): Promise<{ phone: string; ensName?: string } | null> {
   try {
@@ -158,6 +183,139 @@ app.get("/api/balance/:address", async (req, res) => {
       success: false,
       error: error.message,
     });
+  }
+});
+
+// ============================================================================
+// STEP 2b: BUY Endpoint — Purchase TXTC with Lycamobile airtime (via Reloadly)
+// ============================================================================
+app.post("/api/buy", async (req, res) => {
+  try {
+    const { userAddress, amount, userPhone } = req.body;
+
+    if (!userAddress || !amount) {
+      return res.status(400).json({
+        success: false,
+        error: "Missing userAddress or amount",
+      });
+    }
+
+    console.log(`💰 BUY: ${amount} EUR airtime → TXTC for ${userAddress}`);
+
+    // Respond immediately to avoid Twilio timeout
+    res.json({ success: true, message: "Buy initiated" });
+
+    // Process async
+    (async () => {
+      try {
+        // Step 1: Deduct airtime via Reloadly (Lycamobile)
+        const reloadlyToken = await getReloadlyToken();
+        const baseUrl = process.env.RELOADLY_SANDBOX !== 'false'
+          ? 'https://topups-sandbox.reloadly.com'
+          : 'https://topups.reloadly.com';
+
+        // Auto-detect operator
+        const cleanPhone = (userPhone || '').replace(/^\+/, '');
+        const countryCode = process.env.LYCAMOBILE_COUNTRY_CODE || 'IE';
+
+        const opResponse = await fetch(
+          `${baseUrl}/operators/auto-detect/phone/${cleanPhone}/countries/${countryCode}`,
+          { headers: { 'Authorization': `Bearer ${reloadlyToken}`, 'Accept': 'application/com.reloadly.topups-v1+json' } }
+        );
+        const opData = await opResponse.json() as any;
+
+        if (!opData.operatorId) {
+          throw new Error('Could not detect operator for this number');
+        }
+
+        // Get fixed amounts
+        const fixedAmounts: number[] = opData.fixedAmounts || [];
+        const denomType = opData.denominationType;
+        let sendAmount = parseFloat(amount);
+
+        if (denomType === 'FIXED' && fixedAmounts.length > 0) {
+          const valid = fixedAmounts.filter((a: number) => a >= sendAmount);
+          sendAmount = valid.length > 0 ? valid[0] : fixedAmounts[0];
+          console.log(`   Fixed denomination: requested ${amount}, sending ${sendAmount}`);
+        }
+
+        // Send top-up
+        const topupResponse = await fetch(`${baseUrl}/topups`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${reloadlyToken}`,
+            'Accept': 'application/com.reloadly.topups-v1+json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            operatorId: opData.operatorId,
+            amount: sendAmount,
+            useLocalAmount: false,
+            customIdentifier: `txtc_${Date.now()}`,
+            recipientPhone: { countryCode, number: cleanPhone },
+          }),
+        });
+
+        const topupData = await topupResponse.json() as any;
+
+        if (!topupData.transactionId) {
+          throw new Error(topupData.message || 'Airtime top-up failed');
+        }
+
+        console.log(`   ✅ Airtime sent: TX ${topupData.transactionId}`);
+        const deliveredEur = topupData.deliveredAmount || sendAmount;
+
+        // Step 2: Calculate TXTC amount (100 TXTC per USD, convert EUR→USD)
+        const eurToUsd = parseFloat(process.env.EUR_TO_USD_RATE || '1.08');
+        const usdAmount = deliveredEur * eurToUsd;
+        const txtcRate = parseFloat(process.env.USD_TO_TXTC_RATE || '100');
+        const totalTxtc = usdAmount * txtcRate;
+        const txtcToUser = totalTxtc * 0.9;  // 90% to user
+        const txtcForGas = totalTxtc * 0.1;  // 10% swapped for ETH gas
+
+        console.log(`   📊 ${deliveredEur} EUR → ${totalTxtc} TXTC (${txtcToUser} to user, ${txtcForGas} for gas)`);
+
+        // Step 3: Mint TXTC to user
+        const provider = new ethers.JsonRpcProvider(SEPOLIA_CONFIG.rpcUrl);
+        const signer = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
+        const tokenContract = new ethers.Contract(
+          SEPOLIA_CONFIG.contracts.tokenXYZ,
+          ["function mint(address to, uint256 amount)"],
+          signer,
+        );
+
+        const mintAmount = ethers.parseEther(txtcToUser.toFixed(4));
+        const mintTx = await tokenContract.mint(userAddress, mintAmount);
+        await mintTx.wait();
+        console.log(`   ✅ Minted ${txtcToUser.toFixed(2)} TXTC to ${userAddress}`);
+
+        // Step 4: Send SMS confirmation
+        if (twilioClient && twilioPhoneNumber && userPhone) {
+          const pinInfo = topupData.pinDetail?.code
+            ? `\nPIN: ${topupData.pinDetail.code}`
+            : '';
+          await twilioClient.messages.create({
+            body: `✅ Purchase complete!\n\n€${deliveredEur} airtime → ${txtcToUser.toFixed(2)} TXTC${pinInfo}\n\nReply BALANCE to check.`,
+            from: twilioPhoneNumber,
+            to: userPhone,
+          });
+        }
+      } catch (error: any) {
+        console.error("❌ Buy error:", error.message);
+        if (twilioClient && twilioPhoneNumber && userPhone) {
+          try {
+            await twilioClient.messages.create({
+              body: `❌ Purchase failed: ${error.message}\n\nTry again later.`,
+              from: twilioPhoneNumber,
+              to: userPhone,
+            });
+          } catch {}
+        }
+      }
+    })();
+  } catch (error: any) {
+    console.error("❌ Buy initiation error:", error.message);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

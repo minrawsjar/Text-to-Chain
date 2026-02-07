@@ -28,6 +28,8 @@ pub enum Command {
     Redeem { code: String },
     /// Swap tokens for ETH: SWAP <amount> TXTC
     Swap { amount: f64, token: String },
+    /// Buy TXTC with airtime: BUY <amount>
+    Buy { amount: f64 },
     /// Bridge tokens cross-chain: BRIDGE <amount> <token> FROM <chain> TO <chain>
     Bridge {
         amount: f64,
@@ -137,6 +139,7 @@ impl CommandProcessor {
                 }
             }
             "SWAP" | "EXCHANGE" => self.parse_swap(&parts),
+            "BUY" | "TOPUP" | "PURCHASE" => self.parse_buy(&parts),
             "BRIDGE" | "CROSS" => self.parse_bridge(&parts),
             "SAVE" | "ADD" => self.parse_save(&parts),
             "CONTACTS" | "BOOK" => Command::Contacts,
@@ -231,6 +234,20 @@ impl CommandProcessor {
         }
     }
 
+    /// Parse BUY command: BUY <amount>
+    fn parse_buy(&self, parts: &[&str]) -> Command {
+        if parts.len() < 2 {
+            return Command::Unknown("Usage: BUY <amount>\nExample: BUY 10 (buys €10 of TXTC with airtime)".to_string());
+        }
+
+        let amount = match parts[1].parse::<f64>() {
+            Ok(amt) => amt,
+            Err(_) => return Command::Unknown("Invalid amount".to_string()),
+        };
+
+        Command::Buy { amount }
+    }
+
     /// Parse SWAP command: SWAP <amount> TXTC
     fn parse_swap(&self, parts: &[&str]) -> Command {
         if parts.len() < 3 {
@@ -263,6 +280,7 @@ impl CommandProcessor {
             Command::Deposit => self.deposit_response(from).await,
             Command::History => self.history_response(from).await,
             Command::Redeem { code } => self.redeem_response(from, &code).await,
+            Command::Buy { amount } => self.buy_response(from, amount).await,
             Command::Swap { amount, token } => self.swap_response(from, amount, &token).await,
             Command::Bridge { amount, token, from_chain, to_chain } => {
                 self.bridge_response(from, amount, &token, &from_chain, &to_chain).await
@@ -275,7 +293,7 @@ impl CommandProcessor {
     }
 
     fn help_response(&self) -> String {
-        "Text-to-Chain Commands:\nJOIN <name> - Create wallet\nBALANCE - Check balance\nSEND 10 TXTC TO name.ttcip.eth\nDEPOSIT - Get deposit address\nREDEEM <code> - Redeem voucher\nSWAP 10 TXTC - Swap to ETH\nCASHOUT <AMOUNT> TXTC - Cash out to USDC\nMENU - Show this help".to_string()
+        "Text-to-Chain Commands:\nJOIN <name> - Create wallet\nBALANCE - Check balance\nSEND 10 TXTC TO name.ttcip.eth\nBUY 10 - Buy TXTC with airtime\nDEPOSIT - Get deposit address\nREDEEM <code> - Redeem voucher\nSWAP 10 TXTC - Swap to ETH\nCASHOUT <AMOUNT> TXTC - Cash out to USDC\nMENU - Show this help".to_string()
     }
 
     async fn join_response(&self, from: &str, ens_name: Option<String>) -> String {
@@ -714,6 +732,40 @@ impl CommandProcessor {
                 "Redemption failed. Try later.".to_string()
             }
         }
+    }
+
+    async fn buy_response(&self, from: &str, amount: f64) -> String {
+        let Some(ref user_repo) = self.user_repo else {
+            return "DB offline. Try later.".to_string();
+        };
+
+        let user = match user_repo.find_by_phone(from).await {
+            Ok(Some(user)) => user,
+            Ok(None) => { return "No wallet. Reply JOIN first.".to_string(); },
+            Err(_) => { return "Error. Try later.".to_string(); },
+        };
+
+        // Call backend /api/buy endpoint (async - fires and notifies via SMS)
+        let client = reqwest::Client::new();
+        let api_url = &format!("{}/api/buy", self.backend_url);
+
+        tracing::info!("BUY {} EUR airtime for user {}", amount, user.wallet_address);
+
+        let _response = client
+            .post(api_url)
+            .json(&serde_json::json!({
+                "userAddress": user.wallet_address,
+                "amount": amount,
+                "userPhone": from
+            }))
+            .timeout(std::time::Duration::from_secs(2))
+            .send()
+            .await;
+
+        format!(
+            "Buying TXTC with €{:.0} airtime...\n\nYou'll get an SMS when complete.",
+            amount
+        )
     }
 
     async fn swap_response(&self, from: &str, amount: f64, token: &str) -> String {
