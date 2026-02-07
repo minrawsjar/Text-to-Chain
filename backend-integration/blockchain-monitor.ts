@@ -18,7 +18,7 @@ interface WalletBalance {
 export class BlockchainMonitor {
   private provider: ethers.JsonRpcProvider;
   private walletBalances: Map<string, WalletBalance> = new Map();
-  private pollInterval: number = 15000; // Check every 15 seconds
+  private pollInterval: number = 60000; // Check every 60 seconds
   private isRunning: boolean = false;
   private intervalId?: NodeJS.Timeout;
   private smsHandlerUrl: string;
