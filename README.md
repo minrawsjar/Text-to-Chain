@@ -2,7 +2,7 @@
 
 **Bringing DeFi to 2.5 billion feature phone users through SMS**
 
-Text-to-Chain is a full-stack SMS-based DeFi platform that lets anyone interact with blockchain technology using only text messages. No smartphone, no app, no MetaMask — just send an SMS.
+Text-to-Chain is a full-stack SMS-based DeFi platform that lets anyone interact with blockchain technology using only text messages. No smartphone, no app, no Wallet hassles — just send an SMS.
 
 > Send `JOIN alice` to create a wallet. Send `SEND 10 TXTC TO bob.ttcip.eth` to transfer tokens. It's that simple.
 
