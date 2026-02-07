@@ -128,6 +128,9 @@ Text-to-Chain turns any phone with SMS into a full DeFi wallet. Users send simpl
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+→ **[Vision & Mission](docs/vision-and-mission.md)** — what Text-to-Chain is about and why we build it.  
+→ **[Technical Overview](docs/technical-overview.md)** — deep dive: onboarding, features, architecture, trust model (TEE / secure server).
+
 ---
 
 ## 💬 SMS Commands
