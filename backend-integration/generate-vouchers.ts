@@ -67,11 +67,8 @@ async function main() {
   for (let i = 0; i < count; i++) {
     // Generate random 4-byte code (8 hex chars)
     const code = crypto.randomBytes(4).toString("hex").toUpperCase();
-    const codeBytes32 = ethers.zeroPadValue(
-      ethers.hexlify(Buffer.from(code, "utf8")),
-      32
-    );
-    const codeHash = ethers.keccak256(codeBytes32);
+    // Must match Solidity: keccak256(abi.encodePacked(code))
+    const codeHash = ethers.keccak256(ethers.toUtf8Bytes(code));
 
     try {
       const tx = await voucher.generateVoucher(codeHash, amountWei);
