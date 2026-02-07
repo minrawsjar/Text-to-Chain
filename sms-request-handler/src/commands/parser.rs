@@ -692,14 +692,15 @@ impl CommandProcessor {
         };
 
         if result["success"].as_bool().unwrap_or(false) {
+            let token_amount = result["tokenAmount"].as_str().unwrap_or("0");
             let eth_amount = result["ethAmount"].as_str().unwrap_or("0");
             let tx_hash = result["txHash"].as_str().unwrap_or("");
             
-            tracing::info!("Voucher redeemed successfully: {} ETH, tx: {}", eth_amount, tx_hash);
+            tracing::info!("Voucher redeemed successfully: {} TXTC + {} ETH, tx: {}", token_amount, eth_amount, tx_hash);
             
             format!(
-                "Voucher redeemed!\n\n{} ETH credited.\n\nReply BALANCE to check.",
-                eth_amount
+                "Voucher redeemed!\n\nReceived:\n{} TXTC\n{} ETH (gas)\n\nReply BALANCE to check.",
+                token_amount, eth_amount
             )
         } else {
             let error_msg = result["error"].as_str().unwrap_or("Unknown error");

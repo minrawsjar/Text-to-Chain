@@ -77,7 +77,6 @@ Text-to-Chain turns any phone with SMS into a full DeFi wallet. Users send simpl
 | 🦀 | **Rust + Axum** | High-performance SMS webhook handler |
 | 📜 | **Solidity + Foundry** | Smart contracts with 102 passing tests |
 | 🔷 | **ethers.js v6** | Blockchain interactions |
-| 🟡 | **Yellow Network / Nitrolite** | Off-chain state channels for batching |
 | 🔵 | **Circle CCTP V2** | Cross-chain USDC bridging |
 | 🦄 | **Uniswap V3** | On-chain token swaps |
 | 🌉 | **Li.Fi SDK** | Multi-chain bridge aggregation |
@@ -201,7 +200,7 @@ Text-to-Chain/
 
 ---
 
-## � Smart Contracts
+## 📜 Smart Contracts
 
 Deployed on **Ethereum Sepolia** with **102 Foundry tests** passing.
 
