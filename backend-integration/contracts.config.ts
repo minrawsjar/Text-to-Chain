@@ -9,11 +9,11 @@ export const SEPOLIA_CONFIG = {
   rpcUrl: process.env.RPC_URL || 'https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY',
   
   contracts: {
-    tokenXYZ: '0x0F0E4A3F59C3B8794A9044a0dC0155fB3C3fA223', // New - with burnFromAny
-    voucherManager: '0x74B02854a16cf33416541625C100beC97cC94F01', // New - with new TokenXYZ
+    tokenXYZ: '0x4d054FB258A260982F0bFab9560340d33D9E698B',
+    voucherManager: '0x3094e5820F911f9119D201B9E2DdD4b9cf792990',
     uniswapV3PoolManager: '0xd9794c0daC0382c11F6Cf4a8365a8A49690Dcfc8',
-    entryPointV3: '0x0084FA06Fa317D4311d865f35d62dCBcb0517355', // New - with new addresses
-    uniswapV3Pool: '0xfdbf742dfc37b7ed1da429d3d7add78d99026c23', // New pool with new TokenXYZ
+    entryPointV3: '0x6b5b8b917f3161aeb72105b988E55910e231d240',
+    uniswapV3Pool: '0xfAFFB106AC76424C30999d15eB0Ad303d2Add407', // 1% fee, 500 TXTC + 1 WETH
   },
   
   uniswap: {
@@ -24,9 +24,8 @@ export const SEPOLIA_CONFIG = {
   },
   
   poolInfo: {
-    positionNftId: '223628',
-    fee: 3000, // 0.3%
-    tickSpacing: 60,
+    fee: 10000, // 1%
+    tickSpacing: 200,
   },
   
   etherscan: {

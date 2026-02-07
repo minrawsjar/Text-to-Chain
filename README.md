@@ -88,7 +88,7 @@ Text-to-Chain turns any phone with SMS into a full DeFi wallet. Users send simpl
 ┌─────────────────────────────────────────────────────────────────┐
 │                          USER LAYER                             │
 │                                                                 │
-│   Feature Phone ──► SMS ──► Twilio ──► HTTPS (Caddy/sslip.io)  │
+│   Feature Phone ──► SMS ──► Twilio ──► HTTPS (Caddy/sslip.io)   │
 └────────────────────────────────┬────────────────────────────────┘
                                  │
                                  ▼
@@ -114,17 +114,17 @@ Text-to-Chain turns any phone with SMS into a full DeFi wallet. Users send simpl
      │            │             │
      ▼            ▼             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    ETHEREUM SEPOLIA                              │
+│                    ETHEREUM SEPOLIA                             │
 │                                                                 │
-│   TXTC Token ─── VoucherManager ─── Uniswap V3 Pool            │
-│   EntryPointV3 ─── ENS Registrar ─── TokenMessengerV2 (CCTP)   │
+│   TXTC Token ─── VoucherManager ─── Uniswap V3 Pool             │
+│   EntryPointV3 ─── ENS Registrar ─── TokenMessengerV2 (CCTP)    │
 └─────────────────────────────┬───────────────────────────────────┘
                               │ CCTP depositForBurn
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                      ARC TESTNET                                │
 │                                                                 │
-│   USDC (native) ─── Circle Wallets (per user) ─── Batch Payout │
+│   USDC (native) ─── Circle Wallets (per user) ─── Batch Payout  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -213,7 +213,7 @@ Deployed on **Ethereum Sepolia** with **102 Foundry tests** passing.
 | **VoucherManager** | [`0x3094e5...2990`](https://sepolia.etherscan.io/address/0x3094e5820F911f9119D201B9E2DdD4b9cf792990) | Shop staking, voucher generation & redemption |
 | **EntryPointV3** | [`0x6b5b8b...d240`](https://sepolia.etherscan.io/address/0x6b5b8b917f3161aeb72105b988E55910e231d240) | Backend orchestration for swaps & redemptions |
 | **PoolManager** | [`0xd9794c...fc8`](https://sepolia.etherscan.io/address/0xd9794c0daC0382c11F6Cf4a8365a8A49690Dcfc8) | Uniswap V3 TXTC/WETH pool management |
-| **Uniswap V3 Pool** | [`0x54fB26...9c7e`](https://sepolia.etherscan.io/address/0x54fB26024019504e075B98c2834adEB29E779c7e) | TXTC/WETH 0.3% fee tier |
+| **Uniswap V3 Pool** | [`0xfAFFB1...d407`](https://sepolia.etherscan.io/address/0xfAFFB106AC76424C30999d15eB0Ad303d2Add407) | TXTC/WETH 1% fee tier (500 TXTC : 1 ETH) |
 
 ### Test Coverage
 
@@ -383,19 +383,19 @@ Set your Twilio webhook to: `https://<EC2-IP-WITH-DASHES>.sslip.io/sms/webhook`
 | **Yellow Network** | Nitrolite SDK, off-chain state channels, batch settlement |
 | **Uniswap** | V3 pools, SwapRouter, NonfungiblePositionManager |
 | **ENS** | Subdomain registration (`*.ttcip.eth`) |
-| **Li.Fi** | Cross-chain bridge aggregation (20+ bridges, 7+ chains) |
 | **Twilio** | SMS gateway for global reach |
+| **Reloadly** | Lycamobile airtime top-ups (50+ countries) |
 | **Africa's Talking** | Airtime payments + USSD for feature phones |
 
 ---
 
 ## 📄 License
 
-MIT
+[MIT](LICENSE)
 
 ---
 
 <p align="center">
   <b>Built for the next billion crypto users</b><br>
-  <i>No smartphone. No app. No MetaMask. Just SMS.</i>
+  <i>No smartphone. No app. No Hassles. Just SMS.</i>
 </p>

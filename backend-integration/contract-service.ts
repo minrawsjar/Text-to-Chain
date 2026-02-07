@@ -201,8 +201,8 @@ export class ContractService {
       
       console.log(`✅ Swap complete! ETH sent to ${userAddress}, Tx: ${receipt.hash}`);
       
-      // Estimate ETH received (rough calculation based on pool price)
-      const ethReceived = (parseFloat(tokenAmount) * 0.0001).toFixed(6);
+      // Estimate ETH received (pool rate: 1 TXTC ≈ 0.002 ETH, minus 1% fee)
+      const ethReceived = (parseFloat(tokenAmount) * 0.002 * 0.99).toFixed(6);
       
       return {
         success: true,
