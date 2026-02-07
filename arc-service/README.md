@@ -18,7 +18,7 @@ SMS: "CASHOUT 10 TXTC"
   → CCTP depositForBurn (Sepolia → Arc, domain 0 → 26)
   → Circle Iris API attestation (~20s Fast Transfer)
   → receiveMessage on Arc → USDC minted to user's Circle Wallet
-  → SMS: "Cashout complete! 10 TXTC → ~$24 USDC"
+  → SMS: "Cashout complete! 10 TXTC → ~$38 USDC"
 ```
 
 ---
@@ -128,7 +128,7 @@ SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
 ARC_RPC_URL=https://arc-testnet.drpc.org
 CIRCLE_API_KEY=...                   # Circle Developer Console
 CIRCLE_ENTITY_SECRET=...            # Circle entity secret (hex-encoded)
-TXTC_ADDRESS=0x0F0E4A3F59C3B8794A9044a0dC0155fB3C3fA223
+TXTC_ADDRESS=0x4d054FB258A260982F0bFab9560340d33D9E698B
 WETH_ADDRESS=0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14
 ETH_PRICE_USD=2500                   # For USDC estimate display
 PORT=8084
@@ -163,8 +163,3 @@ docker compose up -d arc
 | **Express** | REST API server |
 | **TypeScript** | Type-safe implementation |
 
----
-
-## License
-
-MIT

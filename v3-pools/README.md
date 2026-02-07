@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏊 V3 Pools — Liquidity Management dApp
 
-## Getting Started
+> **Next.js + RainbowKit + Uniswap V3 SDK**
 
-First, run the development server:
+Web-based dApp for managing TXTC/WETH Uniswap V3 liquidity positions. Connect your wallet, add/remove liquidity, and monitor pool state.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## Features
+
+- Connect wallet via RainbowKit (MetaMask, WalletConnect, etc.)
+- View TXTC/WETH pool state (price, liquidity, tick)
+- Add liquidity to the TXTC/WETH pool
+- Manage existing positions
+- Real-time pool data from Sepolia
+
+---
+
+## Folder Structure
+
+```
+v3-pools/
+├── app/
+│   ├── page.tsx            # Main page
+│   ├── layout.tsx          # Root layout
+│   ├── providers.tsx       # Wagmi + RainbowKit providers
+│   ├── globals.css         # Global styles (Tailwind)
+│   ├── components/
+│   │   ├── ConnectWallet.tsx    # Wallet connection button
+│   │   └── LiquidityForm.tsx   # Add liquidity form
+│   ├── lib/
+│   │   ├── constants.ts        # Contract addresses, chain config
+│   │   ├── hooks/              # React hooks for pool data
+│   │   └── uniswap/            # Uniswap V3 SDK helpers
+│   └── types/              # TypeScript type definitions
+├── public/                 # Static assets
+├── package.json
+├── next.config.ts
+├── tsconfig.json
+├── postcss.config.mjs
+└── eslint.config.mjs
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Technology | Purpose |
+|------------|---------|
+| **Next.js 16** | React framework |
+| **RainbowKit** | Wallet connection UI |
+| **Wagmi** | React hooks for Ethereum |
+| **Uniswap V3 SDK** | Pool math + position management |
+| **viem** | Ethereum client |
+| **ethers.js v6** | Contract interactions |
+| **Tailwind CSS** | Styling |
+| **Lucide React** | Icons |
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cd v3-pools
+npm install
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Pool Info
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Parameter | Value |
+|-----------|-------|
+| **Pool** | `0xfAFFB106AC76424C30999d15eB0Ad303d2Add407` |
+| **Token0 (TXTC)** | `0x4d054FB258A260982F0bFab9560340d33D9E698B` |
+| **Token1 (WETH)** | `0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14` |
+| **Fee** | 1% (10000) |
+| **Rate** | 1 TXTC = 0.002 ETH (1 ETH = 500 TXTC) |
+| **Network** | Sepolia Testnet |
+

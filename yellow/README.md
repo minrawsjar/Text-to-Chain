@@ -138,7 +138,7 @@ Yellow Network Batch (10 payments):
                          ▼
 ┌──────────────────────────────────────────��───────────────────┐
 │              ETHEREUM SEPOLIA TESTNET                         │
-│  • TXTC Token: 0x0F0E4A3F59C3B8794A9044a0dC0155fB3C3fA223     │
+│  • TXTC Token: 0x4d054FB258A260982F0bFab9560340d33D9E698B     │
 │  • ENS Registrar: 0xcD057A8AbF3832e65edF5d224313c6b4e6324F76  │
 │  • On-chain settlement mints TXTC to recipients               │
 └────────────────────────────────────────── ───────────────── ──┘
@@ -289,10 +289,6 @@ GET http://localhost:8083/api/yellow/pending
 - **Arc/CCTP Service:** [../arc-service/README.md](../arc-service/README.md) - USDC cashout
 
 ---
-
-## 📄 License
-
-MIT License - See [LICENSE](../LICENSE) file
 
 ---
 

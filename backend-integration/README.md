@@ -1,56 +1,99 @@
-# Backend Integration
+# 🔧 Backend Integration
 
-TypeScript/Node.js API server that bridges the SMS handler with smart contracts, Yellow Network, and Li.Fi.
+> **TypeScript/Express API server — Port 3000**
 
-## Services
+Central API layer that bridges the SMS handler with smart contracts, Uniswap V3, ENS, Twilio, and Reloadly. Handles voucher redemption, token swaps, balance queries, ENS registration, deposit monitoring, and Lycamobile airtime purchases.
 
-| File | Purpose |
-|------|---------|
-| `api-server.ts` | Express API server (Port 3000) |
-| `contract-service.ts` | Smart contract interactions (swap, redeem, mint, balance) |
-| `lifi-service.ts` | Li.Fi cross-chain bridge/swap + chain/token resolution |
-| `ens-service.ts` | ENS subdomain registration (`*.ttcip.eth`) |
-| `blockchain-monitor.ts` | Deposit detection + SMS notifications |
-| `contracts.config.ts` | Contract addresses (Sepolia) |
+---
+
+## Architecture
+
+```
+SMS Handler (Rust) ──▶ Backend API (Express, Port 3000)
+                            │
+                ┌───────────┼───────────────┐
+                ▼           ▼               ▼
+        ┌────────────┐ ┌──────────┐  ┌──────────────┐
+        │  Contract   │ │   ENS    │  │  Blockchain  │
+        │  Service    │ │  Service │  │   Monitor    │
+        │ (swap,mint, │ │(register,│  │ (deposits,   │
+        │  redeem)    │ │ resolve) │  │  SMS notify) │
+        └──────┬─────┘ └────┬─────┘  └──────┬───────┘
+               │             │               │
+               ▼             ▼               ▼
+        ┌──────────────────────────────────────────┐
+        │         Ethereum Sepolia Testnet          │
+        │  TXTC · VoucherManager · Uniswap V3 · ENS│
+        └──────────────────────────────────────────┘
+```
+
+---
+
+## Folder Structure
+
+```
+backend-integration/
+├── api-server.ts           # Express API server — all endpoints
+├── contract-service.ts     # Smart contract interactions (swap, redeem, mint, balance)
+├── ens-service.ts          # ENS subdomain registration (*.ttcip.eth)
+├── blockchain-monitor.ts   # Deposit detection + SMS notifications
+├── deposit-monitor.ts      # Alchemy webhook-based deposit tracking
+├── contracts.config.ts     # Contract addresses + pool config (Sepolia)
+├── generate-vouchers.ts    # CLI tool to generate voucher codes on-chain
+├── voucher-codes.md        # Active voucher codes reference
+├── EntryPointV3.abi.json   # ABI files
+├── TokenXYZ.abi.json       #
+├── VoucherManager.abi.json #
+├── UniswapV3PoolManager.abi.json
+├── package.json            # Dependencies
+├── tsconfig.json           # TypeScript config
+├── Dockerfile              # Docker build
+└── .env                    # Environment variables
+```
+
+---
 
 ## API Endpoints
 
 ### Core
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/redeem` | Redeem voucher code |
-| GET | `/api/balance/:address` | Get TXTC + ETH balance |
-| POST | `/api/swap` | Swap TXTC → ETH (Uniswap V3) |
-| POST | `/api/send` | Send TXTC to address |
-| POST | `/api/quote` | Get swap quote |
-| GET | `/api/price` | Current TXTC price |
-| GET | `/api/contracts` | Contract addresses |
-
-### Li.Fi (Cross-Chain)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/lifi/quote` | Get bridge/swap quote |
-| POST | `/api/bridge` | Execute cross-chain bridge |
-| GET | `/api/lifi/status/:txHash` | Check bridge tx status |
-| GET | `/api/lifi/chains` | List supported chains |
+| `GET` | `/health` | Health check |
+| `POST` | `/api/redeem` | Redeem voucher → mint TXTC + send ETH gas |
+| `GET` | `/api/balance/:address` | Get TXTC + ETH balance |
+| `POST` | `/api/swap` | Swap TXTC → ETH via Uniswap V3 (1% pool) |
+| `POST` | `/api/send` | Send TXTC to address |
+| `POST` | `/api/quote` | Get swap quote |
+| `GET` | `/api/price` | Current TXTC price |
+| `GET` | `/api/contracts` | Contract addresses |
 
 ### ENS
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/ens/check/:name` | Check name availability |
-| POST | `/api/ens/register` | Register subdomain |
-| GET | `/api/ens/resolve/:name` | Resolve name → address |
+| `GET` | `/api/ens/check/:name` | Check subdomain availability |
+| `POST` | `/api/ens/register` | Register `<name>.ttcip.eth` |
+| `GET` | `/api/ens/resolve/:name` | Resolve name → address |
+
+### Airtime (Reloadly/Lycamobile)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/buy` | Buy Lycamobile airtime with TXTC |
+
+---
 
 ## Deployed Contracts (Sepolia)
 
 | Contract | Address |
 |----------|---------|
-| TokenXYZ (TXTC) | `0x0F0E4A3F59C3B8794A9044a0dC0155fB3C3fA223` |
-| VoucherManager | `0x74B02854a16cf33416541625C100beC97cC94F01` |
-| EntryPointV3 | `0x0084FA06Fa317D4311d865f35d62dCBcb0517355` |
-| Uniswap V3 Pool | `0xfdbf742dfc37b7ed1da429d3d7add78d99026c23` |
-| ENS Registrar | `0xcD057A8AbF3832e65edF5d224313c6b4e6324F76` |
-| SwapRouter | `0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E` |
+| **TXTC Token** | `0x4d054FB258A260982F0bFab9560340d33D9E698B` |
+| **VoucherManager** | `0x3094e5820F911f9119D201B9E2DdD4b9cf792990` |
+| **EntryPointV3** | `0x6b5b8b917f3161aeb72105b988E55910e231d240` |
+| **PoolManager** | `0xd9794c0daC0382c11F6Cf4a8365a8A49690Dcfc8` |
+| **Uniswap V3 Pool** | `0xfAFFB106AC76424C30999d15eB0Ad303d2Add407` (1% fee, 500 TXTC : 1 ETH) |
+| **SwapRouter** | `0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E` |
+| **ENS Registrar** | `0xcD057A8AbF3832e65edF5d224313c6b4e6324F76` |
+
+---
 
 ## Setup
 
@@ -65,19 +108,51 @@ npm install
 PRIVATE_KEY=0x...
 ENS_PRIVATE_KEY=0x...
 RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
-TWILIO_ACCOUNT_SID=...
+ETHERSCAN_API_KEY=...
+
+# Contract addresses
+TokenXYZ=0x4d054FB258A260982F0bFab9560340d33D9E698B
+VoucherManager=0x3094e5820F911f9119D201B9E2DdD4b9cf792990
+UniswapV3Pool=0xfAFFB106AC76424C30999d15eB0Ad303d2Add407
+EntryPointV3=0x6b5b8b917f3161aeb72105b988E55910e231d240
+
+# Alchemy
+ALCHEMY_WEBHOOK_ID=...
+ALCHEMY_API_KEY=...
+
+# Twilio
+TWILIO_ACCOUNT_SID=AC...
 TWILIO_AUTH_TOKEN=...
-TWILIO_PHONE_NUMBER=...
-LIFI_API_KEY=...              # Optional
+TWILIO_PHONE_NUMBER=+18449862896
+
+# Reloadly (Lycamobile airtime)
+RELOADLY_CLIENT_ID=...
+RELOADLY_CLIENT_SECRET=...
 ```
 
 ### Run
 
 ```bash
-npm start
-# or
+# Development
 npx ts-node api-server.ts
+
+# Production (Docker)
+docker compose up -d backend
 ```
+
+---
+
+## Voucher Generation
+
+```bash
+# Generate 10 vouchers of 1 TXTC each
+npx tsx generate-vouchers.ts 10 1
+
+# Generate 5 vouchers of 100 TXTC each
+npx tsx generate-vouchers.ts 5 100
+```
+
+---
 
 ## Testing
 
@@ -88,11 +163,26 @@ curl http://localhost:3000/health
 # Get balance
 curl http://localhost:3000/api/balance/0xYourAddress
 
-# LiFi quote (mainnet tokens)
-curl -X POST http://localhost:3000/api/lifi/quote \
+# Redeem voucher
+curl -X POST http://localhost:3000/api/redeem \
   -H "Content-Type: application/json" \
-  -d '{"fromChain":"polygon","toChain":"base","fromToken":"USDC","toToken":"USDC","amount":"10","userAddress":"0x..."}'
+  -d '{"voucherCode":"BB673BCC","userAddress":"0x..."}'
 
-# Supported chains
-curl http://localhost:3000/api/lifi/chains
+# Swap TXTC → ETH
+curl -X POST http://localhost:3000/api/swap \
+  -H "Content-Type: application/json" \
+  -d '{"userAddress":"0x...","amount":"10"}'
 ```
+
+---
+
+## Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| **Express** | REST API server |
+| **ethers.js v6** | Blockchain interactions |
+| **Twilio** | SMS notifications |
+| **Reloadly** | Lycamobile airtime API |
+| **TypeScript** | Type-safe implementation |
+

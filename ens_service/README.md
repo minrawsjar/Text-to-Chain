@@ -213,8 +213,3 @@ Full ENS commit-reveal flow to prevent front-running:
 | **Public Resolver** | Address + name record storage |
 | **Custom Registrar** | Subdomain availability + registration |
 
----
-
-## License
-
-MIT
