@@ -6,6 +6,9 @@ An SMS-based DeFi platform enabling users to interact with blockchain technology
 
 **Target Users:** 2.5 billion feature phone users worldwide who lack access to traditional banking and smartphone-based crypto wallets.
 
+→ **[Vision & Mission](docs/vision-and-mission.md)** — what Text-to-Chain is about and why we build it.  
+→ **[Technical Overview](docs/technical-overview.md)** — deep dive: onboarding, features, architecture, trust model (TEE / secure server).
+
 ---
 
 ## 💬 SMS Commands
