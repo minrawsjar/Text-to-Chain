@@ -481,21 +481,16 @@ app.post("/api/yellow/settle", async (req, res) => {
       await tx.wait();
       txHash = tx.hash;
     } else {
-      // TXTC: burn from sender + mint to recipient
+      // TXTC: mint to recipient (sender already debited off-chain by Yellow)
       const backendSigner = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
       const tokenContract = new ethers.Contract(
         SEPOLIA_CONFIG.contracts.tokenXYZ,
-        ["function mint(address to, uint256 amount)", "function burnFromAny(address from, uint256 amount)"],
+        ["function mint(address to, uint256 amount)"],
         backendSigner,
       );
       const amountWei = ethers.parseEther(amount);
 
-      if (fromAddress) {
-        console.log(`   Burning ${amount} TXTC from ${fromAddress}`);
-        const burnTx = await tokenContract.burnFromAny(fromAddress, amountWei);
-        await burnTx.wait();
-      }
-
+      console.log(`   Minting ${amount} TXTC to ${recipientAddress} (sender debited off-chain)`);
       const mintTx = await tokenContract.mint(recipientAddress, amountWei);
       await mintTx.wait();
       txHash = mintTx.hash;
@@ -615,20 +610,18 @@ app.post("/api/send-yellow", async (req, res) => {
       const provider = new ethers.JsonRpcProvider(SEPOLIA_CONFIG.rpcUrl);
       
       if (token.toUpperCase() === "TXTC") {
-        // Use backend wallet to burn from sender and mint to recipient
+        // Mint to recipient (sender debited off-chain by Yellow)
         const amountWei = ethers.parseEther(amount);
         const backendSigner = new ethers.Wallet(process.env.PRIVATE_KEY!, provider);
         const tokenContract = new ethers.Contract(
           SEPOLIA_CONFIG.contracts.tokenXYZ,
           [
-            "function burnFromAny(address from, uint256 amount)",
             "function mint(address to, uint256 amount)",
           ],
           backendSigner,
         );
 
-        const burnTx = await tokenContract.burnFromAny(fromAddress, amountWei);
-        await burnTx.wait();
+        console.log(`   Minting ${amount} TXTC to ${toAddress} (sender debited off-chain)`);
         const mintTx = await tokenContract.mint(toAddress, amountWei);
         await mintTx.wait();
 
