@@ -1,10 +1,132 @@
-# Text-to-Chain: SMS-Based DeFi Platform
+# 📱 Text-to-Chain
 
-> **Bringing Web3 to everyone through simple text messages**
+**Bringing DeFi to 2.5 billion feature phone users through SMS**
 
-An SMS-based DeFi platform enabling users to interact with blockchain technology using only text messages. No smartphone, no app, no MetaMask required.
+Text-to-Chain is a full-stack SMS-based DeFi platform that lets anyone interact with blockchain technology using only text messages. No smartphone, no app, no MetaMask — just send an SMS.
 
-**Target Users:** 2.5 billion feature phone users worldwide who lack access to traditional banking and smartphone-based crypto wallets.
+> Send `JOIN alice` to create a wallet. Send `SEND 10 TXTC TO bob.ttcip.eth` to transfer tokens. It's that simple.
+
+---
+
+## 🎯 The Problem
+
+### 2.5 Billion People Are Locked Out of Web3
+
+#### 📵 No Smartphones
+- Billions rely on feature phones with no app stores, no browsers
+- Existing crypto wallets require smartphones and internet access
+
+#### 🏦 No Banking
+- 1.4 billion adults are unbanked globally
+- Traditional DeFi requires bank accounts for on/off ramps
+
+#### 🧩 Too Complex
+- Seed phrases, gas fees, chain switching — overwhelming for new users
+- No solution bridges SMS-native users to on-chain DeFi
+
+### 📊 The Reality
+- **2.5B** feature phone users worldwide
+- **$0** in DeFi accessible to them
+- **Zero** SMS-native DeFi platforms exist today
+
+---
+
+## 🚀 The Text-to-Chain Solution
+
+Text-to-Chain turns any phone with SMS into a full DeFi wallet. Users send simple text commands to a phone number and interact with smart contracts, DEXs, cross-chain bridges, and payment rails — all without ever touching a browser.
+
+### ✨ Key Features
+
+#### 📲 SMS-Native Interface
+- 13+ commands covering wallets, transfers, swaps, bridges, and more
+- Works on any phone that can send a text message
+
+#### ⚡ Instant Transfers via Yellow Network
+- Off-chain batching reduces gas costs by up to 67%
+- State channel technology for near-instant settlement
+
+#### 🔄 On-Chain Swaps (Uniswap V3)
+- Swap TXTC for ETH directly from SMS
+- Custom liquidity pool with 0.3% fee tier
+
+#### 💸 Cross-Chain Cashout (Circle CCTP)
+- Convert TXTC → USDC and bridge to Arc Testnet in one SMS
+- Circle Developer-Controlled Wallets for each user
+- CCTP V2 Fast Transfer (~20 second attestation)
+
+#### 🌍 Cross-Chain Bridge (Li.Fi)
+- Bridge tokens across 7+ chains (Ethereum, Polygon, Base, Arbitrum, etc.)
+- Aggregates 20+ bridges for best execution
+
+#### 🏷️ ENS Identity
+- `JOIN alice` registers `alice.ttcip.eth` on-chain
+- Human-readable addresses for SMS transfers
+
+#### 📞 Airtime-to-Token
+- Buy TXTC with mobile airtime (MTN, Airtel)
+- USSD menu for feature phone users in Africa
+
+---
+
+## 🛠️ Technical Architecture
+
+### Core Technologies
+
+| | Technology | Purpose |
+|---|---|---|
+| 🦀 | **Rust + Axum** | High-performance SMS webhook handler |
+| 📜 | **Solidity + Foundry** | Smart contracts with 102 passing tests |
+| 🔷 | **ethers.js v6** | Blockchain interactions |
+| 🔵 | **Circle CCTP V2** | Cross-chain USDC bridging |
+| 🦄 | **Uniswap V3** | On-chain token swaps |
+| 🌉 | **Li.Fi SDK** | Multi-chain bridge aggregation |
+| 🐳 | **Docker Compose** | One-command deployment |
+
+### System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          USER LAYER                             │
+│                                                                 │
+│   Feature Phone ──► SMS ──► Twilio ──► HTTPS (Caddy/sslip.io)  │
+└────────────────────────────────┬────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│               SMS REQUEST HANDLER (Rust · Port 8080)            │
+│                                                                 │
+│   Command Parser ─── User Auth ─── PostgreSQL ─── Router        │
+│   (13+ commands)     (phone→wallet)  (users, vouchers)          │
+└───────┬──────────┬──────────────┬───────────────┬───────────────┘
+        │          │              │               │
+        ▼          ▼              ▼               ▼
+┌──────────┐ ┌──────────┐ ┌───────────┐ ┌────────────────┐
+│ Backend  │ │ Yellow   │ │ Arc/CCTP  │ │ Airtime        │
+│ API      │ │ Network  │ │ Service   │ │ Service        │
+│ :3000    │ │ :8083    │ │ :8084     │ │ :8082          │
+│          │ │          │ │           │ │                │
+│ Redeem   │ │ Batch    │ │ CASHOUT   │ │ Airtime→Token  │
+│ Balance  │ │ Transfer │ │ CCTP V2   │ │ USSD Menu      │
+│ Swap     │ │ Nitrolite│ │ Circle    │ │ Africa's       │
+│ ENS      │ │ Settle   │ │ Wallets   │ │ Talking        │
+│ Bridge   │ │          │ │           │ │                │
+└────┬─────┘ └────┬─────┘ └─────┬─────┘ └────────────────┘
+     │            │             │
+     ▼            ▼             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    ETHEREUM SEPOLIA                              │
+│                                                                 │
+│   TXTC Token ─── VoucherManager ─── Uniswap V3 Pool            │
+│   EntryPointV3 ─── ENS Registrar ─── TokenMessengerV2 (CCTP)   │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │ CCTP depositForBurn
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      ARC TESTNET                                │
+│                                                                 │
+│   USDC (native) ─── Circle Wallets (per user) ─── Batch Payout │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 → **[Vision & Mission](docs/vision-and-mission.md)** — what Text-to-Chain is about and why we build it.  
 → **[Technical Overview](docs/technical-overview.md)** — deep dive: onboarding, features, architecture, trust model (TEE / secure server).
@@ -15,361 +137,255 @@ An SMS-based DeFi platform enabling users to interact with blockchain technology
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `JOIN` | Create wallet + ENS subdomain | `JOIN alice` |
+| `JOIN <name>` | Create wallet + ENS subdomain | `JOIN alice` |
 | `BALANCE` | Check TXTC and ETH balances | `BALANCE` |
-| `DEPOSIT` | Get wallet address | `DEPOSIT` |
-| `REDEEM <code>` | Redeem voucher for tokens | `REDEEM ABC123` |
-| `SEND <amt> <token> TO <recipient>` | Send tokens (batched via Yellow Network) | `SEND 10 TXTC TO alice.ttcip.eth` |
-| `SWAP <amt> TXTC` | Swap TXTC for ETH (Uniswap V3) | `SWAP 5 TXTC` |
-| `CASHOUT <amt> TXTC` | Convert TXTC → USDC on Arc via CCTP | `CASHOUT 10 TXTC` |
-| `BRIDGE <amt> <token> FROM <chain> TO <chain>` | Cross-chain bridge (Li.Fi, mainnet) | `BRIDGE 10 USDC FROM POLYGON TO BASE` |
+| `DEPOSIT` | Get your wallet address | `DEPOSIT` |
+| `REDEEM <code>` | Redeem voucher for TXTC tokens | `REDEEM 766F58CA` |
+| `SEND <amt> <token> TO <recipient>` | Transfer tokens (Yellow Network batched) | `SEND 10 TXTC TO bob.ttcip.eth` |
+| `SWAP <amt> TXTC` | Swap TXTC → ETH via Uniswap V3 | `SWAP 5 TXTC` |
+| `CASHOUT <amt> TXTC` | Convert TXTC → USDC on Arc (CCTP) | `CASHOUT 10 TXTC` |
+| `BRIDGE <amt> <token> FROM <chain> TO <chain>` | Cross-chain bridge via Li.Fi | `BRIDGE 10 USDC FROM POLYGON TO BASE` |
 | `SAVE <name> <phone>` | Save a contact | `SAVE alice +919876543210` |
 | `CONTACTS` | List saved contacts | `CONTACTS` |
 | `CHAIN <name>` | Switch active chain | `CHAIN polygon` |
-| `PIN <xxxx>` | Set/change PIN | `PIN 1234` |
-| `HELP` | Show commands | `HELP` |
+| `PIN <xxxx>` | Set/change security PIN | `PIN 1234` |
+| `HELP` | Show available commands | `HELP` |
 
 ---
 
-## 🏗️ Architecture
+## 📂 Project Structure
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                         USER LAYER                               │
-│  Feature Phone ──► SMS ──► Twilio ──► Cloudflare Tunnel          │
-└──────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                  SMS REQUEST HANDLER (Rust, Port 8080)           │
-│  • Command Parser (JOIN, BALANCE, SEND, SWAP, CASHOUT, etc.)    │
-│  • User Auth (phone → wallet mapping in SQLite)                  │
-│  • Routes to backend microservices                               │
-└──────────────────────────────────────────────────────────────────┘
-       │              │              │              │
-       ▼              ▼              ▼              ▼
-┌────────────┐ ┌────────────┐ ┌────────────┐ ┌─────────────────┐
-│ Backend    │ │ Yellow     │ │ Arc/CCTP   │ │ Li.Fi Bridge    │
-│ API :3000  │ │ Batch :8083│ │ Service    │ │ (via Backend)   │
-│            │ │            │ │ :8084      │ │                 │
-│ • Redeem   │ │ • Batch    │ │ • CASHOUT  │ │ • Cross-chain   │
-│ • Balance  │ │   SEND     │ │ • Circle   │ │ • Multi-chain   │
-│ • Swap     │ │ • Nitrolite│ │   Wallets  │ │ • Quote/Execute │
-│ • ENS      │ │ • Off-chain│ │ • CCTP     │ │                 │
-│ • Notify   │ │ • Settle   │ │   Bridge   │ │                 │
-└─────┬──────┘ └─────┬──────┘ └──┬───┬─────┘ └─────────────────┘
-      │              │           │   │
-      ▼              ▼           │   │
-┌─────────────────────────────┐  │   │
-│  SEPOLIA TESTNET            │  │   │
-│                             │  │   │
-│  TXTC Token    0x0F0E...223 │  │   │
-│  VoucherMgr    0x74B0...F01 │  │   │
-│  Uniswap V3   0xfdbf...c23 │  │   │
-│  WETH          0xfFf9...B14 │  │   │
-│  USDC          0x1c7d...238 │  │   │
-│  ENS Registrar 0xcD05...F76 │  │   │
-│  TokenMessengerV2 (CCTP)    │◄─┘   │
-└─────────────────────────────┘      │
-              │ CCTP depositForBurn   │
-              ▼                       │
-┌─────────────────────────────┐      │
-│  CIRCLE ATTESTATION SERVICE │      │
-│  (Iris API Sandbox)         │      │
-│  • Fast Transfer (~20s)     │      │
-│  • Attestation signing      │      │
-└─────────────┬───────────────┘      │
-              │ attestation           │
-              ▼                       │
-┌─────────────────────────────┐      │
-│  ARC TESTNET                │◄─────┘
-│                             │  receiveMessage (mint)
-│  USDC (native)   0x3600..  │
-│  MessageTransmitterV2      │
-│  Circle Wallets (per user) │
-│  Batch Payouts             │
-└─────────────────────────────┘
+Text-to-Chain/
+│
+├── sms-request-handler/        # Rust SMS webhook + command parser
+│   ├── src/commands/           #   Command parsing & routing
+│   ├── src/sms/                #   Twilio webhook handler
+│   ├── src/db/                 #   PostgreSQL (users, vouchers, contacts)
+│   └── src/wallet/             #   Wallet creation & chain config
+│
+├── backend-integration/        # TypeScript API server (Port 3000)
+│   ├── api-server.ts           #   Express endpoints (swap, redeem, balance, ENS)
+│   ├── contract-service.ts     #   Smart contract interactions
+│   ├── lifi-service.ts         #   Li.Fi bridge aggregation
+│   ├── ens-service.ts          #   ENS subdomain registration
+│   └── blockchain-monitor.ts   #   Deposit detection service
+│
+├── yellow/                     # Yellow Network batch service (Port 8083)
+│   └── src/
+│       ├── batch-service.ts    #   Nitrolite SDK, 3-min batch loop
+│       └── api-server.ts       #   Queue/status/pending endpoints
+│
+├── arc-service/                # Arc/Circle CCTP cashout (Port 8084)
+│   └── src/
+│       ├── index.ts            #   Express API (cashout, wallet, treasury)
+│       ├── cashout-service.ts  #   TXTC→WETH→USDC swap + CCTP bridge
+│       └── circle-wallet.ts    #   Circle Developer-Controlled Wallets
+│
+├── Liquidity-pools/            # Solidity smart contracts (Foundry)
+│   ├── src/
+│   │   ├── TokenXYZ.sol        #   TXTC ERC20 (mint, burn, burnFromAny)
+│   │   ├── VoucherManager.sol  #   Shop staking, voucher gen/redeem
+│   │   ├── EntryPointV3.sol    #   Backend orchestration hub
+│   │   └── UniswapV3PoolManager.sol  # Uniswap V3 pool management
+│   └── test/                   #   102 Foundry tests (100% on core contracts)
+│
+├── ens_service/                # Rust ENS integration
+│   └── src/
+│       ├── ens.rs              #   Namehash, registry bindings
+│       └── register.rs         #   Commit-reveal registration
+│
+├── airtime-service/            # Airtime-to-token conversion (Port 8082)
+├── front/                      # Web frontend
+├── docker-compose.yml          # One-command deployment
+└── Caddyfile                   # Auto-HTTPS reverse proxy (sslip.io)
+```
+
+---
+
+## 📜 Smart Contracts
+
+Deployed on **Ethereum Sepolia** with **102 Foundry tests** passing.
+
+| Contract | Address | Description |
+|----------|---------|-------------|
+| **TXTC Token** | [`0x4d054F...698B`](https://sepolia.etherscan.io/address/0x4d054FB258A260982F0bFab9560340d33D9E698B) | ERC20 with minter roles and `burnFromAny` |
+| **VoucherManager** | [`0x3094e5...2990`](https://sepolia.etherscan.io/address/0x3094e5820F911f9119D201B9E2DdD4b9cf792990) | Shop staking, voucher generation & redemption |
+| **EntryPointV3** | [`0x6b5b8b...d240`](https://sepolia.etherscan.io/address/0x6b5b8b917f3161aeb72105b988E55910e231d240) | Backend orchestration for swaps & redemptions |
+| **PoolManager** | [`0xd9794c...fc8`](https://sepolia.etherscan.io/address/0xd9794c0daC0382c11F6Cf4a8365a8A49690Dcfc8) | Uniswap V3 TXTC/WETH pool management |
+| **Uniswap V3 Pool** | [`0x54fB26...9c7e`](https://sepolia.etherscan.io/address/0x54fB26024019504e075B98c2834adEB29E779c7e) | TXTC/WETH 0.3% fee tier |
+
+### Test Coverage
+
+```
+| Contract              | Lines   | Statements | Branches | Functions |
+|-----------------------|---------|------------|----------|-----------|
+| TokenXYZ.sol          | 100.00% | 100.00%    | 100.00%  | 100.00%   |
+| VoucherManager.sol    | 100.00% | 100.00%    | 93.94%   | 100.00%   |
+| EntryPointV3.sol      | 77.55%  | 69.57%     | 82.14%   | 100.00%   |
+| UniswapV3PoolManager  | 39.68%  | 23.81%     | 50.00%   | 100.00%   |
+```
+
+> PoolManager coverage is lower because swap/liquidity functions require a live Uniswap V3 pool. All function entry points and access control paths are fully tested.
+
+---
+
+## 🔄 Key Flows
+
+### SEND Flow (Yellow Network Batching)
+
+```
+SMS: "SEND 10 TXTC TO alice.ttcip.eth"
+  → Queue in Yellow batch service
+  → Wait for 3-minute batch window
+  → Open Nitrolite state channel session
+  → Off-chain transfer via Yellow Network
+  → On-chain settlement: mint TXTC to recipient
+  → SMS: "Sent 10 TXTC to alice.ttcip.eth"
 ```
 
 ### CASHOUT Flow (TXTC → USDC on Arc)
 
 ```
-User SMS: "CASHOUT 10 TXTC"
-    │
-    ▼
-1. Burn 10 TXTC from user's Sepolia wallet
-    │
-    ▼
-2. Swap TXTC → WETH (Uniswap V3, 0.3% pool)
-    │
-    ▼
-3. Swap WETH → USDC (Uniswap V3, 0.05% pool)
-    │
-    ▼
-4. Approve USDC → TokenMessengerV2
-    │
-    ▼
-5. depositForBurn (CCTP) → Sepolia → Arc (domain 0 → 26)
-    │
-    ▼
-6. Poll Circle Iris API for attestation (~20s Fast Transfer)
-    │
-    ▼
-7. receiveMessage on Arc → USDC minted to user's Circle Wallet
-    │
-    ▼
-8. SMS notification: "✅ Cashout complete! 10 TXTC → ~$240 USDC"
+SMS: "CASHOUT 10 TXTC"
+  → Burn TXTC from user wallet
+  → Swap TXTC → WETH (Uniswap V3, 0.3% pool)
+  → Swap WETH → USDC (Uniswap V3, 0.05% pool)
+  → CCTP depositForBurn (Sepolia → Arc, domain 0 → 26)
+  → Circle Iris API attestation (~20s Fast Transfer)
+  → receiveMessage on Arc → USDC minted to user's Circle Wallet
+  → SMS: "Cashout complete! 10 TXTC → ~$240 USDC"
+```
+
+### SWAP Flow
+
+```
+SMS: "SWAP 5 TXTC"
+  → Burn 5 TXTC from user wallet
+  → Mint 5 TXTC to backend
+  → Approve SwapRouter
+  → exactInputSingle (TXTC → WETH, 0.3% pool)
+  → Unwrap WETH → ETH
+  → Send ETH to user wallet
+  → SMS: "Swapped 5 TXTC → 0.01135 ETH"
 ```
 
 ---
 
-## ✅ Implemented Features
-
-### 1. SMS Command Interface
-- **Rust-based** SMS webhook handler (Axum framework)
-- Command parser with pattern matching for all commands above
-- Twilio + SMSCountry integration for SMS delivery
-- SQLite database for users, vouchers, contacts, deposits
-
-### 2. Wallet Management
-- Automatic wallet creation on `JOIN`
-- ENS subdomain registration (`alice.ttcip.eth`)
-- On-chain ENS registrar at `0xcD057A8AbF3832e65edF5d224313c6b4e6324F76`
-- Phone-to-wallet mapping in SQLite
-
-### 3. Token Transfers via Yellow Network
-- **Off-chain batching** using Nitrolite SDK state channels
-- Transactions queued and processed every **3 minutes**
-- Flow: Queue → Open Yellow session → Off-chain transfers → On-chain TXTC mint → Close session
-- WebSocket connection to `wss://clearnet-sandbox.yellow.com/ws`
-- Custody address: `0x019B65A265EB3363822f2752141b3dF16131b262`
-- Asset: `ytest.usd` (Yellow sandbox token)
-- On-chain settlement mints TXTC to recipients on Sepolia
-- SMS notifications on completion
-
-### 4. Token Swaps (Uniswap V3)
-- `SWAP <amount> TXTC` → swaps TXTC for ETH
-- Backend burns user's TXTC, mints to itself, swaps via Uniswap V3
-- Pool: TXTC/WETH at 0.3% fee tier
-- SwapRouter: `0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E`
-- Async execution with SMS notification on completion
-
-### 5. Cross-Chain Bridge (Li.Fi) — Mainnet Ready
-- `BRIDGE 10 USDC FROM POLYGON TO BASE`
-- Li.Fi aggregates 20+ bridges (Stargate, Across, Hop, etc.)
-- **Supported chains:** Ethereum, Polygon, Arbitrum, Optimism, Base, Avalanche, BSC
-- **Supported tokens:** USDC, USDT, ETH, MATIC
-- Quote endpoint returns estimated output, min output, execution time
-- Async execution with SMS notification
-- **Note:** Li.Fi is mainnet-only — does not work with testnet tokens
-
-### 6. Voucher System
-- On-chain voucher creation via VoucherManager
-- `REDEEM <code>` mints TXTC + ETH gas bonus
-- No shop registration required
-
-### 7. Deposit Detection
-- Blockchain polling service monitors user wallets
-- Detects incoming ETH and ERC20 transfers
-- SMS notification on deposit
-
-### 8. Contact Book
-- `SAVE alice +919876543210` — save contacts
-- `CONTACTS` — list saved contacts
-- Send to contacts by name
-
-### 9. Airtime-to-Token Conversion
-- Buy TXTC tokens with mobile airtime (MTN, Airtel)
-- USSD menu interface (`*384*46750#`)
-- 90% TXTC + 10% ETH distribution
-- Africa's Talking payment gateway integration
-
-### 10. CASHOUT — USDC on Arc via Circle CCTP (Bounty Track)
-- `CASHOUT <amount> TXTC` → converts TXTC to USDC on Arc Testnet
-- **Full on-chain flow:** Burn TXTC from user → Swap TXTC→WETH → Swap WETH→USDC (Uniswap V3) → CCTP bridge to Arc
-- **Circle CCTP V2** with Fast Transfer (~20 second attestation)
-- **Circle Developer-Controlled Wallets** — one per user, mapped by phone number
-- **Persistent wallet storage** — survives container restarts (file-backed + Docker volume)
-- **Multi-recipient batch payouts** — `POST /api/arc/batch-payout` sends USDC to multiple Arc wallets
-- **Treasury dashboard API** — `GET /api/arc/treasury` returns aggregate balances and payout stats
-- **SMS notification** on cashout completion via Twilio
-- **Contract addresses:**
-  - Sepolia TokenMessengerV2: `0x8fe6b999dc680ccfdd5bf7eb0974218be2542daa`
-  - Arc MessageTransmitterV2: `0xe737e5cebeeba77efe34d4aa090756590b1ce275`
-  - Sepolia USDC: `0x1c7d4b196cb0c7b01d743fbc6116a902379c7238`
-  - Arc USDC (native): `0x3600000000000000000000000000000000000000`
-- **Circle tools used:** Arc, USDC, Circle Wallets, CCTP
-
----
-
-## 📂 Repository Structure
-
-```
-Text-to-Chain/
-├── sms-request-handler/     # Rust SMS webhook + command parser (Port 8080)
-│   ├── src/commands/        # Command parsing (parser.rs)
-│   ├── src/sms/             # Twilio/SMSCountry webhooks
-│   ├── src/db/              # SQLite (users, vouchers, contacts, deposits)
-│   └── src/wallet/          # Wallet creation, chains, tokens
-│
-├── arc-service/             # Arc/Circle CCTP Cashout Service (Port 8084)
-│   ├── src/index.ts         # Express API (cashout, wallet, pay, batch-payout, treasury)
-│   ├── src/cashout-service.ts # TXTC→WETH→USDC swap + CCTP bridge logic
-│   ├── src/circle-wallet.ts # Circle Developer-Controlled Wallets SDK
-│   ├── wallets.json         # Persistent phone→wallet mapping
-│   └── Dockerfile
-│
-├── backend-integration/     # TypeScript API server (Port 3000)
-│   ├── api-server.ts        # Express endpoints (swap, redeem, balance, bridge, ENS, notify)
-│   ├── contract-service.ts  # Smart contract interactions
-│   ├── lifi-service.ts      # Li.Fi bridge/swap service + chain/token maps
-│   ├── ens-service.ts       # ENS subdomain registration
-│   ├── blockchain-monitor.ts# Deposit detection
-│   └── contracts.config.ts  # Contract addresses
-│
-├── yellow/                  # Yellow Network batch service (Port 8083)
-│   └── src/
-│       ├── batch-service.ts # Nitrolite SDK, 3-min batch loop, on-chain settlement
-│       └── api-server.ts    # Queue/status/pending endpoints
-│
-├── lifi/                    # Li.Fi SDK example + config
-│   └── src/
-│       ├── config/          # Chain IDs, token addresses, SDK init
-│       ├── services/        # Li.Fi API helpers (quote, allowance, status)
-│       └── routes/          # Bridge/swap route handlers
-│
-├── ens_service/             # ENS integration (Partner Prize)
-│   └── src/
-│       ├── ens.rs           # Namehash, EnsMinter, ENS Registry bindings
-│       ├── register.rs      # Parent domain registration (commit-reveal)
-│       ├── sms.rs           # SMS conversation handler for ENS naming
-│       └── main.rs          # Interactive CLI for ENS operations
-│
-├── Liquidity-pools/         # Solidity smart contracts (Foundry)
-│   └── src/
-│       ├── TokenXYZ.sol     # ERC20 with burnFromAny
-│       ├── VoucherManager.sol
-│       ├── EntryPointV3.sol
-│       └── UniswapV3PoolManager.sol
-│
-├── airtime-service/         # Airtime-to-token conversion (Port 8082)
-│
-└── front/                   # Frontend (if applicable)
-```
-
----
-
-## 🔧 Technical Stack
-
-| Layer | Technology |
-|-------|-----------|
-| **SMS Handler** | Rust, Axum, SQLite, reqwest |
-| **Backend API** | TypeScript, Express, ethers.js v6 |
-| **Arc/CCTP Service** | TypeScript, Circle SDK, CCTP V2, Circle Wallets |
-| **Yellow Network** | Nitrolite SDK, WebSocket, state channels |
-| **Cross-Chain** | Li.Fi SDK/API, Circle CCTP |
-| **Smart Contracts** | Solidity ^0.8.20, Foundry |
-| **Blockchains** | Ethereum Sepolia + Arc Testnet |
-| **Circle Tools** | Arc, USDC, CCTP V2, Developer-Controlled Wallets |
-| **SMS Gateway** | Twilio |
-| **Infrastructure** | Docker Compose, Cloudflare Tunnel |
-| **RPC Providers** | Alchemy (Sepolia), dRPC (Arc) |
-
----
-
-## 🚀 Setup & Running
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Docker & Docker Compose
-- Rust (latest stable) — for local SMS handler dev
-- Node.js v18+ — for local backend dev
+- **Docker & Docker Compose** (required)
+- **Rust** (latest stable) — for local SMS handler development
+- **Node.js v18+** — for local backend development
+- **Foundry** — for smart contract testing
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/ArcReactor9/Text-to-Chain.git
+cd Text-to-Chain
+
+# Copy environment files (see below for required variables)
+cp backend-integration/.env.example backend-integration/.env
+cp arc-service/.env.example arc-service/.env
+cp yellow/.env.example yellow/.env
+cp sms-request-handler/.env.example sms-request-handler/.env
+
+# Start all services
+docker compose up -d --build
+
+# Services running:
+#   sms-handler  :8080  — Rust SMS webhook
+#   backend      :3000  — TypeScript API
+#   yellow       :8083  — Yellow Network batch
+#   arc          :8084  — Arc/CCTP cashout
+#   airtime      :8082  — Airtime service
+#   caddy        :443   — Auto-HTTPS reverse proxy
+#   postgres     :5432  — Database
+```
 
 ### Environment Variables
 
-**`backend-integration/.env`:**
+**`backend-integration/.env`**
 ```env
-PRIVATE_KEY=0x...              # Backend wallet (Sepolia)
-ENS_PRIVATE_KEY=0x...
+PRIVATE_KEY=0x...                    # Backend wallet (Sepolia)
 ALCHEMY_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
 TWILIO_ACCOUNT_SID=...
 TWILIO_AUTH_TOKEN=...
-TWILIO_PHONE_NUMBER=...
+TWILIO_PHONE_NUMBER=+18449862896
 ```
 
-**`arc-service/.env`:**
+**`arc-service/.env`**
 ```env
-PRIVATE_KEY=0x...              # Same backend wallet
+PRIVATE_KEY=0x...                    # Same backend wallet
 ALCHEMY_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
-CIRCLE_API_KEY=...             # Circle Developer Console
-CIRCLE_ENTITY_SECRET=...       # Circle entity secret
+CIRCLE_API_KEY=...                   # Circle Developer Console
+CIRCLE_ENTITY_SECRET=...            # Circle entity secret
 ```
 
-**`yellow/.env`:**
+**`yellow/.env`**
 ```env
 PRIVATE_KEY=0x...
 ALCHEMY_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
-PORT=8083
 ```
 
-### Start All Services (Docker Compose)
+### Run Smart Contract Tests
 
 ```bash
-# Start everything
-docker compose up -d
-
-# Services started:
-#   sms-handler  :8080  — Rust SMS webhook
-#   backend      :3000  — Contract API
-#   yellow       :8083  — Yellow Network batch
-#   arc          :8084  — Arc/CCTP cashout
-#   tunnel-sms          — Cloudflare tunnel for Twilio
+cd Liquidity-pools
+forge test -vv          # 102 tests
+forge coverage          # Coverage report
 ```
 
-### Test Commands
+---
+
+## 🏗️ Deployment
+
+### AWS EC2 (Production)
 
 ```bash
-# Test CASHOUT (TXTC → USDC on Arc)
-curl -X POST http://localhost:8084/api/arc/cashout \
-  -H "Content-Type: application/json" \
-  -d '{"phone":"+919876543210","userAddress":"0x...","txtcAmount":"10"}'
+# On EC2 (Ubuntu 24.04)
+sudo apt update && sudo apt install -y docker.io docker-compose-v2 git
+sudo usermod -aG docker ubuntu && newgrp docker
 
-# Check Arc treasury
-curl http://localhost:8084/api/arc/treasury
+git clone https://github.com/ArcReactor9/Text-to-Chain.git
+cd Text-to-Chain
 
-# Batch payout (multi-recipient USDC on Arc)
-curl -X POST http://localhost:8084/api/arc/batch-payout \
-  -H "Content-Type: application/json" \
-  -d '{"fromPhone":"+919876543210","recipients":[{"phone":"+919999999999","amount":"5"},{"phone":"+918888888888","amount":"10"}]}'
-
-# Test SMS webhook
-curl -X POST http://localhost:8080/sms/incoming \
-  -d 'From=%2B919876543210&Body=HELP&To=%2B12316743830'
-
-# Check balance
-curl http://localhost:3000/api/balance/0x...
+# Copy .env files, then:
+docker compose up -d --build
 ```
+
+Caddy auto-provisions HTTPS via **sslip.io** — no manual certificate management.
+
+Set your Twilio webhook to: `https://<EC2-IP-WITH-DASHES>.sslip.io/sms/webhook`
 
 ---
 
 ## 🔐 Security
 
-- Backend wallet key in environment variables (never committed)
-- User wallets created on-chain (no private key storage in DB)
-- Owner-only smart contract functions (`burnFromAny`, `mint`)
-- Phone number authentication for all commands
-- PIN support for transaction protection
+- **No private key storage** — user wallets are on-chain only
+- **Environment variables** — all secrets in `.env` files (never committed)
+- **Owner-only functions** — `mint`, `burnFromAny`, `emergencyWithdraw` restricted
+- **Authorized backends** — `EntryPointV3` uses allowlist for backend callers
+- **ReentrancyGuard** — on all state-changing contract functions
+- **PIN protection** — optional PIN for transaction authorization
 
 ---
 
-## 📚 Resources
+## 🤝 Built With
 
-- [Uniswap V3 Docs](https://docs.uniswap.org/)
-- [ENS Docs](https://docs.ens.domains/)
-- [Li.Fi Docs](https://docs.li.fi/)
-- [Yellow Network Docs](https://docs.yellow.org/)
-- [Nitrolite SDK](https://github.com/erc7824/nitrolite)
-- [Twilio SMS API](https://www.twilio.com/docs/sms)
+| Partner / Sponsor | Integration |
+|-------------------|-------------|
+| **Circle** | Arc Testnet, USDC, CCTP V2, Developer-Controlled Wallets |
+| **Yellow Network** | Nitrolite SDK, off-chain state channels, batch settlement |
+| **Uniswap** | V3 pools, SwapRouter, NonfungiblePositionManager |
+| **ENS** | Subdomain registration (`*.ttcip.eth`) |
+| **Li.Fi** | Cross-chain bridge aggregation (20+ bridges, 7+ chains) |
+| **Twilio** | SMS gateway for global reach |
+| **Africa's Talking** | Airtime payments + USSD for feature phones |
 
 ---
 
@@ -379,4 +395,7 @@ MIT
 
 ---
 
-**Built for the next billion crypto users**
+<p align="center">
+  <b>Built for the next billion crypto users</b><br>
+  <i>No smartphone. No app. No MetaMask. Just SMS.</i>
+</p>

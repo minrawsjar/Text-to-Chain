@@ -248,12 +248,13 @@ export class EnsService {
       await tx2.wait();
       console.log(`  ✅ Resolver set`);
 
-      // Step 3: Set address record on the Public Resolver
-      console.log(`  Step 3/3: Setting address record...`);
+      // Step 3: Set address + name records on the Public Resolver
+      console.log(`  Step 3/5: Setting address record...`);
       const publicResolver = new ethers.Contract(
         PUBLIC_RESOLVER,
         [
           'function setAddr(bytes32 node, address addr) external',
+          'function setName(bytes32 node, string name) external',
         ],
         this.wallet
       );
@@ -261,10 +262,17 @@ export class EnsService {
       await tx3.wait();
       console.log(`  ✅ Address record set`);
 
-      // Step 4: Transfer ownership to the actual owner
-      console.log(`  Transferring ownership to ${owner}...`);
-      const tx4 = await ensRegistry.setSubnodeOwner(ttcipNode, subdomainLabel, owner);
+      // Step 4: Set name record so ENS app can display human-readable label
+      console.log(`  Step 4/5: Setting name record...`);
+      const fullName = `${subdomain}.${this.parentDomain}`;
+      const tx4 = await publicResolver.setName(subdomainNode, fullName);
       await tx4.wait();
+      console.log(`  ✅ Name record set: ${fullName}`);
+
+      // Step 5: Transfer ownership to the actual owner
+      console.log(`  Step 5/5: Transferring ownership to ${owner}...`);
+      const tx5 = await ensRegistry.setSubnodeOwner(ttcipNode, subdomainLabel, owner);
+      await tx5.wait();
 
       console.log(`✅ ${subdomain}.${this.parentDomain} fully registered in ENS registry`);
     } catch (error: any) {
