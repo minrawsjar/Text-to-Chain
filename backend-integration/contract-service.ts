@@ -163,13 +163,7 @@ export class ContractService {
       
       console.log(`🔄 Swapping ${tokenAmount} TXTC to ETH for ${userAddress}`);
       
-      // Step 1: Burn user's TXTC tokens (owner can burn from any address)
-      console.log('🔥 Burning user TXTC tokens...');
-      const burnTx = await this.tokenXYZ.burnFromAny(userAddress, amountWei);
-      await burnTx.wait();
-      console.log('✅ User tokens burned');
-      
-      // Step 2: Mint tokens to backend for swap
+      // Mint tokens to backend for swap (user balance tracked off-chain)
       console.log('💰 Minting tokens to backend...');
       const mintTx = await this.tokenXYZ.mint(this.signer.address, amountWei);
       await mintTx.wait();

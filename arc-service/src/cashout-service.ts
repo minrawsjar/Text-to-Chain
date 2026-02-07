@@ -131,7 +131,7 @@ export class CashoutService {
 
     const txtcContract = new ethers.Contract(
       TXTC_ADDRESS,
-      [...ERC20_ABI, "function burnFromAny(address from, uint256 amount)"],
+      [...ERC20_ABI, "function mint(address to, uint256 amount)"],
       this.signer
     );
     const swapRouter = new ethers.Contract(
@@ -142,19 +142,11 @@ export class CashoutService {
 
     const amountIn = ethers.parseEther(txtcAmount);
 
-    // Check user's TXTC balance
-    const userBalance = await txtcContract.balanceOf(userAddress);
-    if (userBalance < amountIn) {
-      throw new Error(
-        `Insufficient TXTC balance. Have: ${ethers.formatEther(userBalance)}, Need: ${txtcAmount}`
-      );
-    }
-
-    // Burn TXTC from user's wallet (deduct from their balance)
-    console.log(`   Burning ${txtcAmount} TXTC from user wallet ${userAddress}...`);
-    const burnTx = await txtcContract.burnFromAny(userAddress, amountIn);
-    await burnTx.wait();
-    console.log("   ✅ TXTC burned from user wallet");
+    // Mint TXTC to backend wallet for swap (user balance tracked off-chain)
+    console.log(`   Minting ${txtcAmount} TXTC to backend for swap...`);
+    const mintTx = await txtcContract.mint(await this.signer.getAddress(), amountIn);
+    await mintTx.wait();
+    console.log("   ✅ TXTC minted to backend");
 
     // Approve router to spend TXTC (backend wallet's TXTC for the swap)
     const currentAllowance = await txtcContract.allowance(
