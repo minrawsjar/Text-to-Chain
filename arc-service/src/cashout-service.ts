@@ -336,11 +336,11 @@ export class CashoutService {
     const mintRecipient = "0x000000000000000000000000" + arcWalletAddress.slice(2);
     const destinationCaller = "0x" + "0".repeat(64); // Allow any caller
 
-    // Fast Transfer: minimumFee from API is in USDC (not cents!)
-    // API says minimumFee=1 means 1 USDC = 1,000,000 subunits
-    const maxFee = 1_500_000n; // 1.5 USDC — covers 1 USDC minimum + 50% buffer
-    const minFinalityThreshold = 1000; // Fast Transfer (~1-2 min)
-    console.log("   Using Fast Transfer (maxFee: 1.5 USDC)");
+    // Dynamic maxFee: must be less than bridgeAmount
+    // Use 50% of amount as maxFee cap, or fall back to standard finality if amount is tiny
+    const maxFee = bridgeAmount / 2n;
+    const minFinalityThreshold = maxFee > 0n ? 1000 : 2000; // Fast Transfer if fee allows
+    console.log(`   Using ${minFinalityThreshold === 1000 ? 'Fast' : 'Standard'} Transfer (maxFee: ${ethers.formatUnits(maxFee, 6)} USDC)`);
 
     const burnTx = await tokenMessenger.depositForBurn(
       bridgeAmount,
