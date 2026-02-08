@@ -369,6 +369,8 @@ img {
 
 /* Footer — no bg, one liner */
 .site-footer {
+  position: relative;
+  z-index: 20;
   background: none;
   padding: 1.5rem 2rem;
   text-align: center;
