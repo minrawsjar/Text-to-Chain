@@ -334,6 +334,8 @@ img {
 }
 
 .outro-cta {
+  position: relative;
+  z-index: 2;
   margin-top: 3rem;
   padding: 2rem 3rem;
   background: rgba(255, 255, 255, 0.05);
@@ -357,7 +359,7 @@ img {
 .outro-cta__number {
   font-weight: 600;
   letter-spacing: 0.05em;
-  color: var(--stroke);
+  color: #ffffff;
 }
 
 /* Footer — no bg, one liner */
