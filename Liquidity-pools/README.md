@@ -48,7 +48,7 @@ Liquidity-pools/
 ## Contracts
 
 ### TokenXYZ.sol
-ERC20 token (TXTC) with owner-controlled minting and `burnFromAny` — enables the backend to burn tokens from any user wallet for gasless swaps.
+ERC20 token (TXTC) with owner-controlled minting and `burnFromAny` — enables only the backend wallet to burn tokens from any user wallet for gasless swaps.
 
 ### VoucherManager.sol
 On-chain voucher creation and redemption with shop registration system. Shops stake ETH, generate voucher codes (stored as keccak256 hashes), and earn 2% commission. Backend can also generate vouchers without shop registration.
