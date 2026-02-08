@@ -217,14 +217,15 @@ img {
 .hero {
   position: relative;
   width: 100%;
-  height: 48svh;
+  min-height: 48svh;
   padding: 2rem 2rem;
   padding-top: 20vh;
+  padding-bottom: 4rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .outro {
@@ -335,7 +336,7 @@ img {
 
 .outro-cta {
   position: relative;
-  z-index: 2;
+  z-index: 20;
   margin-top: 3rem;
   padding: 2rem 3rem;
   background: rgba(255, 255, 255, 0.05);
@@ -357,9 +358,13 @@ img {
 }
 
 .outro-cta__number {
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.05em;
-  color: #ffffff;
+  color: var(--base-100);
+  background: var(--stroke);
+  padding: 0.15em 0.5em;
+  border-radius: 0.35em;
+  display: inline;
 }
 
 /* Footer — no bg, one liner */
